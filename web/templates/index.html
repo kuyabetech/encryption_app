@@ -1,191 +1,165 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Secure File Encryption{% endblock %}
+{% block title %}Secure Encrypt – Military-Grade File Protection{% endblock %}
 
 {% block extra_head %}
 <style>
-.hero-section {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(102, 16, 242, 0.1) 100%);
-    border: 2px solid rgba(13, 110, 253, 0.3);
-}
-.feature-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 2rem;
-    height: 100%;
-    transition: all 0.3s ease;
-}
-.feature-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--primary-color);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-.feature-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
-.security-badge {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    background: rgba(25, 135, 84, 0.2);
-    border: 1px solid var(--success-color);
-    color: var(--success-color);
-    font-weight: 600;
-    margin: 0.25rem;
-}
-.stats-counter {
-    font-size: 2.5rem;
-    font-weight: bold;
-    background: linear-gradient(135deg, var(--primary-color), var(--info-color));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.how-it-works-step {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-    border-left: 4px solid var(--primary-color);
-}
-.step-number {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 50px;
-    height: 50px;
-    background: var(--primary-color);
-    color: white;
-    border-radius: 50%;
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-right: 1.5rem;
-    flex-shrink: 0;
-}
-.testimonial-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-}
-.testimonial-author {
-    display: flex;
-    align-items: center;
-    margin-top: 1rem;
-}
-.author-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 1rem;
-    font-weight: bold;
-}
-.cta-section {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.2) 0%, rgba(102, 16, 242, 0.2) 100%);
-    border-radius: 20px;
-    padding: 3rem;
-    margin: 3rem 0;
-    text-align: center;
-    border: 2px solid rgba(13, 110, 253, 0.3);
-}
-.comparison-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.comparison-table th, .comparison-table td {
-    padding: 1rem;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.comparison-table th {
-    background: rgba(0, 0, 0, 0.3);
-    font-weight: 600;
-}
-.comparison-table .check {
-    color: var(--success-color);
-    font-size: 1.5rem;
-}
-.comparison-table .cross {
-    color: var(--danger-color);
-    font-size: 1.5rem;
-}
+    .hero-gradient {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+    
+    .feature-card {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        padding: 2rem;
+        transition: all 0.28s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-6px);
+        border-color: #3b82f6;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    
+    .feature-icon {
+        font-size: 3.2rem;
+        margin-bottom: 1.25rem;
+        opacity: 0.9;
+    }
+    
+    .security-pill {
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0.3rem;
+    }
+    
+    .step-card {
+        background: rgba(30,41,59,0.4);
+        border-left: 4px solid #3b82f6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .step-number {
+        width: 48px;
+        height: 48px;
+        background: #3b82f6;
+        color: white;
+        border-radius: 50%;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-right: 1.25rem;
+    }
+    
+    .stats-number {
+        font-size: 2.8rem;
+        font-weight: 800;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1;
+    }
+    
+    .cta-glass {
+        background: rgba(30,41,59,0.5);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(59,130,246,0.3);
+        border-radius: 20px;
+        padding: 3.5rem 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title { font-size: 2.6rem !important; }
+        .stats-number { font-size: 2.2rem; }
+        .feature-icon { font-size: 2.8rem; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero-section rounded-3 p-4 p-md-5 mb-5">
-    <div class="row align-items-center">
-        <div class="col-lg-6">
-            <h1 class="display-4 fw-bold mb-4">
-                <span class="text-primary">Military-Grade</span><br>
-                File Encryption
-            </h1>
-            <p class="lead mb-4">
-                Secure your files with AES-256-GCM encryption. Everything happens in your browser - 
-                we never see your files or passwords.
-            </p>
-            <div class="d-flex flex-wrap gap-3 mb-4">
-                <span class="security-badge">AES-256-GCM</span>
-                <span class="security-badge">Argon2id</span>
-                <span class="security-badge">Zero-Knowledge</span>
-                <span class="security-badge">Open Source</span>
+
+<!-- Hero -->
+<section class="hero-gradient text-white py-5 py-lg-6 rounded-4 mb-5 shadow-lg">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7 mb-5 mb-lg-0">
+                <h1 class="display-4 fw-bold hero-title mb-4">
+                    Protect Your Files with<br>
+                    <span class="text-primary">Military-Grade Encryption</span>
+                </h1>
+                
+                <p class="lead mb-4 opacity-85">
+                    AES-256-GCM + Argon2id • 100% client-side • Zero server knowledge
+                </p>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <span class="security-pill bg-success bg-opacity-25 border border-success">AES-256-GCM</span>
+                    <span class="security-pill bg-info bg-opacity-25 border border-info">Argon2id KDF</span>
+                    <span class="security-pill bg-primary bg-opacity-25 border border-primary">Zero-Knowledge</span>
+                    <span class="security-pill bg-secondary bg-opacity-25 border border-secondary">Open Source</span>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for('main.encrypt') }}" class="btn btn-primary btn-lg px-5">
+                        <i class="bi bi-lock me-2"></i>Encrypt Now
+                    </a>
+                    <a href="{{ url_for('main.decrypt') }}" class="btn btn-outline-light btn-lg px-5">
+                        <i class="bi bi-unlock me-2"></i>Decrypt
+                    </a>
+                </div>
+
+                <div class="mt-4 small opacity-75">
+                    <i class="bi bi-shield-check me-1"></i>
+                    No registration • No file size traps • No tracking • Free forever
+                </div>
             </div>
-            <div class="d-grid gap-2 d-md-flex mb-4">
-                <a href="{{ url_for('main.encrypt') }}" class="btn btn-primary btn-lg px-4 me-md-2">
-                    <i class="bi bi-file-earmark-lock me-2"></i>Encrypt Files
-                </a>
-                <a href="{{ url_for('main.decrypt') }}" class="btn btn-outline-light btn-lg px-4">
-                    <i class="bi bi-file-earmark-unlock me-2"></i>Decrypt Files
-                </a>
-            </div>
-            <div class="text-muted small">
-                <i class="bi bi-shield-check me-1"></i>
-                No file size limits • No registration required • Completely free
-            </div>
-        </div>
-        <div class="col-lg-6 mt-4 mt-lg-0">
-            <div class="position-relative">
-                <div class="card border-primary bg-dark">
+
+            <!-- How it works mini-card -->
+            <div class="col-lg-5">
+                <div class="card bg-dark border-primary border-opacity-50 shadow">
                     <div class="card-body p-4">
-                        <h5 class="card-title">
-                            <i class="bi bi-lightning-charge text-warning me-2"></i>
-                            How It Works
+                        <h5 class="card-title mb-4">
+                            <i class="bi bi-gear-wide-connected text-primary me-2"></i>
+                            4 Steps to Secure Files
                         </h5>
-                        <div class="how-it-works-step">
+                        
+                        <div class="step-card d-flex">
                             <div class="step-number">1</div>
                             <div>
-                                <h6 class="mb-1">Upload File</h6>
-                                <p class="mb-0 text-muted">Select any file up to 100MB</p>
+                                <strong>Select file</strong><br>
+                                <small class="text-muted">Any type, up to your browser's limit</small>
                             </div>
                         </div>
-                        <div class="how-it-works-step">
+                        
+                        <div class="step-card d-flex">
                             <div class="step-number">2</div>
                             <div>
-                                <h6 class="mb-1">Enter Password</h6>
-                                <p class="mb-0 text-muted">Create a strong password (12+ characters)</p>
+                                <strong>Choose strong password</strong><br>
+                                <small class="text-muted">12+ chars recommended</small>
                             </div>
                         </div>
-                        <div class="how-it-works-step">
+                        
+                        <div class="step-card d-flex">
                             <div class="step-number">3</div>
                             <div>
-                                <h6 class="mb-1">Encrypt Locally</h6>
-                                <p class="mb-0 text-muted">File encrypted in your browser with AES-256</p>
+                                <strong>Encrypt in browser</strong><br>
+                                <small class="text-muted">AES-256-GCM • local only</small>
                             </div>
                         </div>
-                        <div class="how-it-works-step">
+                        
+                        <div class="step-card d-flex mb-0">
                             <div class="step-number">4</div>
                             <div>
-                                <h6 class="mb-1">Download Secure</h6>
-                                <p class="mb-0 text-muted">Get your encrypted .enc file</p>
+                                <strong>Download .enc file</strong><br>
+                                <small class="text-muted">Safe for any cloud or drive</small>
                             </div>
                         </div>
                     </div>
@@ -195,446 +169,115 @@
     </div>
 </section>
 
-<!-- Features Section -->
-<section class="mb-5">
-    <h2 class="text-center mb-5">
-        <i class="bi bi-stars me-2"></i>Why Choose Secure Encrypt
+<!-- Core Features -->
+<section class="container mb-5">
+    <h2 class="text-center mb-5 fw-semibold">
+        <i class="bi bi-shield-lock text-primary me-2"></i>
+        Built for Real Security
     </h2>
+    
     <div class="row g-4">
         <div class="col-md-4">
-            <div class="feature-card">
+            <div class="feature-card text-center">
                 <div class="feature-icon text-primary">
                     <i class="bi bi-shield-check"></i>
                 </div>
-                <h4>Military-Grade Security</h4>
+                <h4 class="mb-3">Authenticated Encryption</h4>
                 <p class="text-muted">
-                    Uses AES-256-GCM, the same encryption standard adopted by governments and militaries worldwide.
+                    AES-256-GCM provides both confidentiality <strong>and</strong> integrity.
                 </p>
-                <ul class="small">
-                    <li>256-bit encryption keys</li>
-                    <li>Authenticated encryption (GCM)</li>
-                    <li>Tamper detection</li>
-                    <li>Unique nonce per encryption</li>
-                </ul>
+                <small class="d-block mt-3 opacity-75">Detects tampering • No silent corruption</small>
             </div>
         </div>
+        
         <div class="col-md-4">
-            <div class="feature-card">
+            <div class="feature-card text-center">
                 <div class="feature-icon text-success">
-                    <i class="bi bi-eye-slash"></i>
+                    <i class="bi bi-eye-slash-fill"></i>
                 </div>
-                <h4>Zero-Knowledge Architecture</h4>
+                <h4 class="mb-3">Zero-Knowledge</h4>
                 <p class="text-muted">
-                    We never see your files, passwords, or encryption keys. Everything is processed locally in your browser.
+                    We never receive plaintext files or your passwords.
                 </p>
-                <ul class="small">
-                    <li>No server-side decryption</li>
-                    <li>End-to-end encryption</li>
-                    <li>No data retention</li>
-                    <li>Open source verification</li>
-                </ul>
+                <small class="d-block mt-3 opacity-75">Client-side only • No server logs</small>
             </div>
         </div>
+        
         <div class="col-md-4">
-            <div class="feature-card">
-                <div class="feature-icon text-warning">
+            <div class="feature-card text-center">
+                <div class="feature-icon text-info">
                     <i class="bi bi-cpu"></i>
                 </div>
-                <h4>Advanced Key Protection</h4>
+                <h4 class="mb-3">Argon2id Resistance</h4>
                 <p class="text-muted">
-                    Uses Argon2id memory-hard key derivation to resist GPU and ASIC brute-force attacks.
+                    Memory-hard key derivation defeats GPU/ASIC attacks.
                 </p>
-                <ul class="small">
-                    <li>Memory-hard hashing</li>
-                    <li>Configurable parameters</li>
-                    <li>Salt generation</li>
-                    <li>GPU attack resistant</li>
-                </ul>
+                <small class="d-block mt-3 opacity-75">Designed to be expensive to crack</small>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Statistics Section -->
-<section class="mb-5">
-    <div class="row text-center">
-        <div class="col-md-3 col-6 mb-4">
-            <div class="stats-counter">AES-256</div>
-            <div class="text-muted">Encryption Standard</div>
-        </div>
-        <div class="col-md-3 col-6 mb-4">
-            <div class="stats-counter">2<sup>128</sup></div>
-            <div class="text-muted">Security Operations</div>
-        </div>
-        <div class="col-md-3 col-6 mb-4">
-            <div class="stats-counter">64 MB</div>
-            <div class="text-muted">Argon2 Memory</div>
-        </div>
-        <div class="col-md-3 col-6 mb-4">
-            <div class="stats-counter">0</div>
-            <div class="text-muted">Files We See</div>
-        </div>
-    </div>
-</section>
-
-<!-- Comparison Table -->
-<section class="mb-5">
-    <h2 class="text-center mb-4">
-        <i class="bi bi-bar-chart me-2"></i>How We Compare
-    </h2>
-    <div class="table-responsive">
-        <table class="comparison-table">
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Secure Encrypt</th>
-                    <th>7-Zip AES</th>
-                    <th>Cloud Storage</th>
-                    <th>Built-in OS</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>AES-256-GCM</td>
-                    <td class="check">✓</td>
-                    <td class="cross">✗</td>
-                    <td class="cross">✗</td>
-                    <td class="cross">✗</td>
-                </tr>
-                <tr>
-                    <td>Argon2 Key Derivation</td>
-                    <td class="check">✓</td>
-                    <td class="cross">✗</td>
-                    <td class="cross">✗</td>
-                    <td class="cross">✗</td>
-                </tr>
-                <tr>
-                    <td>Zero-Knowledge</td>
-                    <td class="check">✓</td>
-                    <td class="check">✓</td>
-                    <td class="cross">✗</td>
-                    <td class="check">✓</td>
-                </tr>
-                <tr>
-                    <td>Tamper Detection</td>
-                    <td class="check">✓</td>
-                    <td class="cross">✗</td>
-                    <td class="cross">✗</td>
-                    <td class="check">✓</td>
-                </tr>
-                <tr>
-                    <td>Open Source</td>
-                    <td class="check">✓</td>
-                    <td class="check">✓</td>
-                    <td class="cross">✗</td>
-                    <td class="cross">✗</td>
-                </tr>
-                <tr>
-                    <td>Cross-Platform</td>
-                    <td class="check">✓</td>
-                    <td class="check">✓</td>
-                    <td class="check">✓</td>
-                    <td class="cross">✗</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</section>
-
-<!-- Security Features -->
-<section class="mb-5">
-    <h2 class="text-center mb-4">
-        <i class="bi bi-shield-lock me-2"></i>Security Features
-    </h2>
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="card bg-dark border-success">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                        What We Protect Against
-                    </h5>
-                    <ul class="mb-0">
-                        <li><strong>Stolen files:</strong> Without password, files are useless</li>
-                        <li><strong>Brute-force attacks:</strong> Argon2id slows guessing attempts</li>
-                        <li><strong>File tampering:</strong> GCM authentication detects changes</li>
-                        <li><strong>Weak passwords:</strong> Real-time strength validation</li>
-                        <li><strong>Metadata leakage:</strong> No identifiable metadata stored</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card bg-dark border-warning">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
-                        Important Limitations
-                    </h5>
-                    <ul class="mb-0">
-                        <li><strong>Lost passwords:</strong> No recovery option (by design)</li>
-                        <li><strong>Compromised devices:</strong> Malware can capture passwords</li>
-                        <li><strong>Weak passwords:</strong> Crypto can't fix "password123"</li>
-                        <li><strong>Quantum computers:</strong> Future threat to all encryption</li>
-                        <li><strong>Human error:</strong> Deleting encrypted files, etc.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Testimonials -->
-<section class="mb-5">
-    <h2 class="text-center mb-4">
-        <i class="bi bi-chat-quote me-2"></i>Trusted by Professionals
-    </h2>
+<!-- Stats -->
+<section class="container text-center mb-5 py-5">
     <div class="row g-4">
-        <div class="col-md-4">
-            <div class="testimonial-card">
-                <p class="mb-0">
-                    "As a security researcher, I appreciate the proper implementation of 
-                    authenticated encryption. Most tools get this wrong."
-                </p>
-                <div class="testimonial-author">
-                    <div class="author-avatar">AJ</div>
-                    <div>
-                        <div class="fw-bold">Alex Johnson</div>
-                        <small class="text-muted">Security Researcher</small>
-                    </div>
-                </div>
-            </div>
+        <div class="col-6 col-md-3">
+            <div class="stats-number">256</div>
+            <div class="text-muted mt-2">bit AES</div>
         </div>
-        <div class="col-md-4">
-            <div class="testimonial-card">
-                <p class="mb-0">
-                    "Finally, an encryption tool that explains its security model clearly. 
-                    The zero-knowledge approach is crucial for privacy."
-                </p>
-                <div class="testimonial-author">
-                    <div class="author-avatar">MR</div>
-                    <div>
-                        <div class="fw-bold">Maria Rodriguez</div>
-                        <small class="text-muted">Privacy Advocate</small>
-                    </div>
-                </div>
-            </div>
+        <div class="col-6 col-md-3">
+            <div class="stats-number">2¹²⁸+</div>
+            <div class="text-muted mt-2">operations</div>
         </div>
-        <div class="col-md-4">
-            <div class="testimonial-card">
-                <p class="mb-0">
-                    "We use this to encrypt sensitive client documents before cloud storage. 
-                    The CLI version integrates perfectly with our workflow."
-                </p>
-                <div class="testimonial-author">
-                    <div class="author-avatar">TS</div>
-                    <div>
-                        <div class="fw-bold">Thomas Schmidt</div>
-                        <small class="text-muted">Legal Firm CTO</small>
-                    </div>
-                </div>
-            </div>
+        <div class="col-6 col-md-3">
+            <div class="stats-number">64</div>
+            <div class="text-muted mt-2">MB memory</div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stats-number">0</div>
+            <div class="text-muted mt-2">files seen</div>
         </div>
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="cta-section">
-    <h2 class="mb-3">Ready to Secure Your Files?</h2>
-    <p class="lead mb-4">
-        Join thousands of users who trust Secure Encrypt with their most sensitive data.
-    </p>
-    <div class="d-flex flex-wrap gap-3 justify-content-center">
-        <a href="{{ url_for('main.encrypt') }}" class="btn btn-primary btn-lg">
-            <i class="bi bi-lock me-2"></i>Start Encrypting
-        </a>
-        <a href="{{ url_for('main.security') }}" class="btn btn-outline-light btn-lg">
-            <i class="bi bi-shield-check me-2"></i>Learn More
-        </a>
-        <a href="https://github.com/yourusername/secure-encrypt" 
-           class="btn btn-outline-info btn-lg" target="_blank">
-            <i class="bi bi-github me-2"></i>View Source
-        </a>
-    </div>
-    <div class="mt-4 text-muted small">
-        <i class="bi bi-info-circle me-1"></i>
-        No registration required • 100% free • No tracking • Open source
-    </div>
-</section>
-
-<!-- FAQ -->
-<section class="mb-5">
-    <h2 class="text-center mb-4">
-        <i class="bi bi-question-circle me-2"></i>Frequently Asked Questions
-    </h2>
-    <div class="accordion" id="faqAccordion">
-        <div class="accordion-item bg-dark border-primary">
-            <h3 class="accordion-header">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" 
-                        data-bs-target="#faq1">
-                    Is my data really secure?
-                </button>
-            </h3>
-            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    <p><strong>Yes.</strong> We use AES-256-GCM, which is:</p>
-                    <ul>
-                        <li>Approved by NSA for TOP SECRET information</li>
-                        <li>Used by banks and governments worldwide</li>
-                        <li>Mathematically proven secure against brute-force attacks</li>
-                        <li>Authenticated (detects tampering)</li>
-                    </ul>
-                    <p>With a strong password, your files are effectively uncrackable.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="accordion-item bg-dark border-primary">
-            <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                        data-bs-target="#faq2">
-                    What happens if I lose my password?
-                </button>
-            </h3>
-            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>There is no password recovery.</strong> This is by design.
-                    </div>
-                    <p>We cannot recover your password because:</p>
-                    <ol>
-                        <li>We never see your password (it's processed locally)</li>
-                        <li>There's no backdoor (that would weaken security)</li>
-                        <li>The encryption key is derived from your password and discarded</li>
-                    </ol>
-                    <p><strong>Always:</strong> Use a password manager, keep backups, and test decryption before deleting originals.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="accordion-item bg-dark border-primary">
-            <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                        data-bs-target="#faq3">
-                    Can you see my files or passwords?
-                </button>
-            </h3>
-            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    <div class="alert alert-success">
-                        <i class="bi bi-eye-slash me-2"></i>
-                        <strong>No. We have zero knowledge of your data.</strong>
-                    </div>
-                    <p>Here's what happens:</p>
-                    <ul>
-                        <li>Files are encrypted <strong>in your browser</strong> before upload</li>
-                        <li>Passwords never leave your computer</li>
-                        <li>Encryption keys are generated locally and discarded</li>
-                        <li>We only see encrypted data (meaningless without the key)</li>
-                    </ul>
-                    <p>This is called "zero-knowledge" architecture and is the gold standard for privacy.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="accordion-item bg-dark border-primary">
-            <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                        data-bs-target="#faq4">
-                    Is this better than built-in OS encryption?
-                </button>
-            </h3>
-            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    <p>They serve different purposes:</p>
-                    <table class="table table-dark table-sm">
-                        <tr>
-                            <th>Feature</th>
-                            <th>Secure Encrypt</th>
-                            <th>BitLocker/FileVault</th>
-                        </tr>
-                        <tr>
-                            <td>Purpose</td>
-                            <td>File sharing & cloud storage</td>
-                            <td>Device theft protection</td>
-                        </tr>
-                        <tr>
-                            <td>Portability</td>
-                            <td>✅ Encrypted files work anywhere</td>
-                            <td>❌ Tied to specific device</td>
-                        </tr>
-                        <tr>
-                            <td>Cloud Safe</td>
-                            <td>✅ Safe to upload anywhere</td>
-                            <td>⚠️ Decrypts in memory</td>
-                        </tr>
-                        <tr>
-                            <td>Authentication</td>
-                            <td>✅ GCM tags verify integrity</td>
-                            <td>❌ No file-level authentication</td>
-                        </tr>
-                    </table>
-                    <p class="mb-0"><strong>Use both</strong> for maximum security: OS encryption for device protection, Secure Encrypt for file sharing.</p>
-                </div>
-            </div>
+<!-- Strong CTA -->
+<section class="container">
+    <div class="cta-glass text-center">
+        <h2 class="mb-4 fw-bold">Your Files Deserve Better Protection</h2>
+        <p class="lead mb-4 opacity-90">
+            Encrypt in seconds. No account. No limits. No compromise.
+        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="{{ url_for('main.encrypt') }}" class="btn btn-primary btn-lg px-5 py-3">
+                <i class="bi bi-shield-lock me-2 fs-4"></i>Start Encrypting
+            </a>
+            <a href="{{ url_for('main.security') }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                <i class="bi bi-shield-check me-2 fs-4"></i>Security Details
+            </a>
         </div>
     </div>
 </section>
 
-<!-- Final CTA -->
-<div class="text-center mb-5">
-    <h3 class="mb-3">No Excuses for Weak Encryption</h3>
-    <p class="lead text-muted mb-4">
-        Your sensitive files deserve military-grade protection. Get started in seconds.
-    </p>
-    <a href="{{ url_for('main.encrypt') }}" class="btn btn-primary btn-lg px-5">
-        <i class="bi bi-shield-lock me-2"></i>Encrypt Your First File
-    </a>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Animate counters
-document.addEventListener('DOMContentLoaded', function() {
-    const counters = document.querySelectorAll('.stats-counter');
-    counters.forEach(counter => {
-        const target = parseInt(counter.textContent.replace(/\D/g, ''));
-        if (!isNaN(target) && target > 0) {
-            animateCounter(counter, target);
+// Very simple counter animation (only if you want it)
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.stats-number').forEach(el => {
+        const target = parseFloat(el.textContent.replace(/[^0-9.]/g, ''));
+        if (!isNaN(target)) {
+            let current = 0;
+            const step = target / 60;
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                el.textContent = current.toFixed(current < 10 ? 0 : 0) + (el.textContent.includes('¹') ? '¹²⁸+' : '');
+            }, 30);
         }
-    });
-    
-    function animateCounter(element, target) {
-        let current = 0;
-        const increment = target / 100;
-        const timer = setInterval(() => {
-            current += increment;
-            if (current >= target) {
-                current = target;
-                clearInterval(timer);
-            }
-            element.textContent = Math.floor(current).toLocaleString();
-        }, 20);
-    }
-    
-    // Add animation to feature cards on scroll
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate__animated', 'animate__fadeInUp');
-            }
-        });
-    }, observerOptions);
-    
-    document.querySelectorAll('.feature-card').forEach(card => {
-        observer.observe(card);
     });
 });
 </script>

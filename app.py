@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
 Secure File Encryption CLI
-Password-based AES-256-GCM file encryption with Argon2 key derivation.
+Password-based AES-256-GCM file encryption with Argon2/PBKDF2 key derivation.
 """
 
 import sys
+import os
 import getpass
 import argparse
 import traceback
 from pathlib import Path
 from typing import Optional
+import time
 
 # Add project modules to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -23,7 +25,7 @@ from security.exceptions import (
 )
 from utils.validators import PasswordValidator, FileValidator
 from utils.logger import logger
-from storage.metadata import FileMetadata
+from storage.metadata import FileMetadata, MetadataHandler
 
 
 class SecureEncryptCLI:
@@ -70,14 +72,11 @@ class SecureEncryptCLI:
                     self.key_manager.verify_password_strength(password, password_confirm)
                 else:
                     # Still validate basic requirements
-                    self.key_manager.verify_password_strength(password)
-                
-                # Estimate strength
-                strength = PasswordValidator.estimate_strength(password)
-                if strength < 0.5:
-                    print(f"⚠️  Password strength: {strength:.0%} - consider using a stronger password")
-                else:
-                    print(f"✅ Password strength: {strength:.0%}")
+                    try:
+                        self.key_manager.verify_password_strength(password)
+                    except PasswordTooWeakError:
+                        # For decryption, we still need to try
+                        print("⚠️  Password is weak, but will try anyway...")
                 
                 return password
                 
@@ -123,7 +122,7 @@ class SecureEncryptCLI:
             
             # Check if output file already exists
             if Path(output_file).exists():
-                overwrite = input(f"⚠️  {output_file} already exists. Overwrite? (y/N): ").lower().strip()
+                overwrite = input(f"⚠️  {Path(output_file).name} already exists. Overwrite? (y/N): ").lower().strip()
                 if overwrite != 'y':
                     print("⏹️  Operation cancelled")
                     return False
@@ -157,7 +156,8 @@ class SecureEncryptCLI:
             print(f"   Encrypted size: {len(ciphertext) + 100:,} bytes")  # Approximate
             
             # Offer to securely delete original
-            if input("\n🗑️  Securely delete original file? (y/N): ").lower().strip() == 'y':
+            delete_choice = input("\n🗑️  Securely delete original file? (y/N): ").lower().strip()
+            if delete_choice == 'y':
                 if FileHandler.secure_delete(input_file):
                     print("✅ Original file securely deleted")
                 else:
@@ -202,8 +202,8 @@ class SecureEncryptCLI:
             
             # Check if file looks encrypted
             if not input_file.endswith(self.encrypted_ext):
-                print(f"⚠️  File doesn't have .enc extension. Continue anyway? (y/N): ", end='')
-                if input().lower().strip() != 'y':
+                warning = input(f"⚠️  File doesn't have .enc extension. Continue anyway? (y/N): ").lower().strip()
+                if warning != 'y':
                     return False
             
             # Get password
@@ -230,7 +230,7 @@ class SecureEncryptCLI:
             
             # Check if output file already exists
             if Path(output_file).exists():
-                overwrite = input(f"⚠️  {output_file} already exists. Overwrite? (y/N): ").lower().strip()
+                overwrite = input(f"⚠️  {Path(output_file).name} already exists. Overwrite? (y/N): ").lower().strip()
                 if overwrite != 'y':
                     print("⏹️  Operation cancelled")
                     return False
@@ -269,6 +269,7 @@ class SecureEncryptCLI:
         except Exception as e:
             print(f"❌ Unexpected error: {e}")
             logger.error(f"Unexpected error: {e}", exc_info=True)
+            traceback.print_exc()
             return False
     
     def show_info(self, file_path: str):
@@ -320,10 +321,10 @@ class SecureEncryptCLI:
         
         # Test key derivation speed
         test_password = "TestPassword123!"
-        test_salt = self.key_manager.generate_salt()
         
         import time
         start = time.time()
+        test_salt = self.key_manager.generate_salt()
         key = self.key_manager.derive_key(test_password, test_salt)
         elapsed = time.time() - start
         
@@ -352,6 +353,7 @@ class SecureEncryptCLI:
         
         # Clean up
         key = b'\x00' * len(key)
+        test_password = ' ' * len(test_password)
     
     def interactive_mode(self):
         """Run in interactive mode."""
@@ -392,7 +394,7 @@ class SecureEncryptCLI:
     def run(self):
         """Main CLI entry point."""
         parser = argparse.ArgumentParser(
-            description='Secure File Encryption with AES-256-GCM and Argon2',
+            description='Secure File Encryption with AES-256-GCM and Argon2/PBKDF2',
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:
@@ -434,7 +436,7 @@ Examples:
         # Show version
         if args.version:
             print("Secure File Encryption v1.0.0")
-            print("AES-256-GCM with Argon2 key derivation")
+            print("AES-256-GCM with Argon2id/PBKDF2 key derivation")
             return
         
         # No command provided

@@ -30,25 +30,32 @@ from security.exceptions import (
 )
 from utils.logger import logger
 
-# Create blueprints
+# ────────────────────────────────────────────────
+# Blueprints
+# ────────────────────────────────────────────────
+
 main_bp = Blueprint('main', __name__)
 api_bp = Blueprint('api', __name__)
 
-# Initialize key manager
+# ────────────────────────────────────────────────
+# Global instances
+# ────────────────────────────────────────────────
+
 key_manager = KeyManager()
 
-# Rate limiter instance
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["100 per hour"]
 )
 
+# ────────────────────────────────────────────────
+# Helper functions
+# ────────────────────────────────────────────────
 
 def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed."""
     allowed_extensions = {'txt', 'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip', 'enc'}
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in allowed_extensions
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 
 def save_uploaded_file(file) -> Tuple[Optional[str], Optional[str]]:
@@ -65,24 +72,18 @@ def save_uploaded_file(file) -> Tuple[Optional[str], Optional[str]]:
         if not allowed_file(file.filename):
             return None, "File type not allowed"
         
-        # Secure filename
         filename = secure_filename(file.filename)
-        
-        # Add random prefix to prevent filename guessing
         random_prefix = secrets.token_hex(8)
         safe_filename = f"{random_prefix}_{filename}"
         
-        # Create upload directory
         upload_dir = Path(current_app.config['UPLOAD_FOLDER'])
         upload_dir.mkdir(parents=True, exist_ok=True)
         
-        # Save file
         filepath = upload_dir / safe_filename
         file.save(str(filepath))
         
-        # Set restrictive permissions (Unix only)
         try:
-            os.chmod(filepath, 0o600)  # Owner read/write only
+            os.chmod(filepath, 0o600)  # owner read/write only
         except:
             pass
         
@@ -98,14 +99,16 @@ def cleanup_temp_file(filepath: str):
     """Securely delete temporary file."""
     try:
         if os.path.exists(filepath):
-            # Try secure delete first
             if not FileHandler.secure_delete(filepath, passes=1):
-                # Fallback to normal delete
                 os.remove(filepath)
             logger.debug(f"Cleaned up temp file: {filepath}")
     except Exception as e:
         logger.warning(f"Failed to cleanup {filepath}: {e}")
 
+
+# ────────────────────────────────────────────────
+# Before-request hook (main blueprint)
+# ────────────────────────────────────────────────
 
 @main_bp.before_request
 def check_session():
@@ -117,6 +120,10 @@ def check_session():
             flash('Session expired. Please login again.', 'warning')
             return redirect(url_for('main.index'))
 
+
+# ────────────────────────────────────────────────
+# Main routes
+# ────────────────────────────────────────────────
 
 @main_bp.route('/')
 def index():
@@ -132,55 +139,46 @@ def encrypt():
     
     if form.validate_on_submit():
         try:
-            # Rate limiting by IP
             ip = get_remote_address()
-            if not RateLimiter.check_limit(f"encrypt_{ip}", 5, 300):  # 5 attempts per 5 minutes
+            if not RateLimiter.check_limit(f"encrypt_{ip}", 5, 300):
                 flash('Too many encryption attempts. Please wait.', 'danger')
                 return redirect(url_for('main.encrypt'))
             
-            # Save uploaded file
             filepath, error = save_uploaded_file(form.file.data)
             if error:
                 flash(f'Upload error: {error}', 'danger')
                 return render_template('encrypt.html', form=form)
             
             try:
-                # Validate file
                 is_valid, message = FileValidator.is_safe_to_encrypt(filepath)
                 if not is_valid:
                     flash(f'File validation failed: {message}', 'danger')
                     cleanup_temp_file(filepath)
                     return render_template('encrypt.html', form=form)
                 
-                # Derive key
                 salt = key_manager.generate_salt()
                 key = key_manager.derive_key(form.password.data, salt)
                 
-                # Read and encrypt file
                 plaintext = FileHandler.read_file(filepath)
                 nonce, ciphertext, tag = CryptoEngine.encrypt(key, plaintext)
                 
-                # Generate output filename
                 original_filename = secure_filename(form.file.data.filename)
                 output_filename = f"{Path(original_filename).stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.enc"
                 
-                # Save encrypted file
                 from storage.metadata import FileMetadata
                 metadata = FileMetadata.create_new(salt, nonce, tag)
                 
                 encrypted_filepath = str(Path(filepath).with_name(output_filename))
                 FileHandler.write_encrypted_file(encrypted_filepath, metadata, ciphertext)
                 
-                # Delete original if requested
                 if form.delete_original.data:
                     FileHandler.secure_delete(filepath)
                 
-                # Store download info in session
                 session['download_file'] = encrypted_filepath
                 session['original_filename'] = Path(original_filename).stem + '.enc'
                 session['file_size'] = len(ciphertext)
                 
-                # Clean up sensitive data
+                # Zero sensitive memory
                 key = b'\x00' * len(key)
                 form.password.data = ' ' * len(form.password.data)
                 
@@ -193,7 +191,6 @@ def encrypt():
                 return render_template('encrypt.html', form=form)
                 
             finally:
-                # Clean up plaintext from memory
                 if 'plaintext' in locals():
                     plaintext = b'\x00' * len(plaintext)
                 if 'key' in locals():
@@ -215,38 +212,27 @@ def decrypt():
     
     if form.validate_on_submit():
         try:
-            # Rate limiting by IP
             ip = get_remote_address()
             if not RateLimiter.check_limit(f"decrypt_{ip}", 5, 300):
                 flash('Too many decryption attempts. Please wait.', 'danger')
                 return redirect(url_for('main.decrypt'))
             
-            # Save uploaded file
             filepath, error = save_uploaded_file(form.file.data)
             if error:
                 flash(f'Upload error: {error}', 'danger')
                 return render_template('decrypt.html', form=form)
             
             try:
-                # Read and parse encrypted file
                 metadata, ciphertext = FileHandler.read_encrypted_file(filepath)
-                
-                # Derive key
                 key = key_manager.derive_key(form.password.data, metadata.salt)
+                plaintext = CryptoEngine.decrypt(key, metadata.nonce, ciphertext, metadata.tag)
                 
-                # Decrypt
-                plaintext = CryptoEngine.decrypt(
-                    key, metadata.nonce, ciphertext, metadata.tag
-                )
-                
-                # Generate output filename
                 original_filename = secure_filename(form.file.data.filename)
                 if original_filename.endswith('.enc'):
                     output_filename = original_filename[:-4] + '_decrypted'
                 else:
                     output_filename = original_filename + '_decrypted'
                 
-                # Add extension if we can guess it from content
                 if plaintext[:4] == b'%PDF':
                     output_filename += '.pdf'
                 elif plaintext[:2] == b'PK':
@@ -254,16 +240,13 @@ def decrypt():
                 else:
                     output_filename += '.bin'
                 
-                # Save decrypted file
                 decrypted_filepath = str(Path(filepath).with_name(output_filename))
                 FileHandler.write_file_atomic(decrypted_filepath, plaintext, backup=False)
                 
-                # Store download info in session
                 session['download_file'] = decrypted_filepath
                 session['original_filename'] = output_filename
                 session['file_size'] = len(plaintext)
                 
-                # Clean up
                 cleanup_temp_file(filepath)
                 key = b'\x00' * len(key)
                 plaintext = b'\x00' * len(plaintext)
@@ -284,7 +267,6 @@ def decrypt():
                 return render_template('decrypt.html', form=form)
                 
             finally:
-                # Clean up
                 if 'plaintext' in locals():
                     plaintext = b'\x00' * len(plaintext)
                 if 'key' in locals():
@@ -319,11 +301,9 @@ def download():
             download_name=original_filename
         ))
         
-        # Add security headers
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['Content-Disposition'] = f'attachment; filename="{original_filename}"'
         
-        # Clean up session
         session.pop('download_file', None)
         session.pop('original_filename', None)
         session.pop('file_size', None)
@@ -350,8 +330,6 @@ def check_password():
     
     if form.validate():
         strength = PasswordValidator.estimate_strength(form.password.data)
-        
-        # Estimate brute force time
         estimate = key_manager.estimate_brute_force_time(form.password.data)
         
         return jsonify({
@@ -364,42 +342,6 @@ def check_password():
     return jsonify({'error': 'Invalid input'}), 400
 
 
-def get_strength_category(strength: float) -> str:
-    """Get password strength category."""
-    if strength < 0.3:
-        return 'Very Weak'
-    elif strength < 0.5:
-        return 'Weak'
-    elif strength < 0.7:
-        return 'Moderate'
-    elif strength < 0.9:
-        return 'Strong'
-    else:
-        return 'Very Strong'
-
-
-def get_password_suggestions(password: str) -> list:
-    """Get password improvement suggestions."""
-    suggestions = []
-    
-    if len(password) < 12:
-        suggestions.append('Use at least 12 characters')
-    
-    if not any(c.isupper() for c in password):
-        suggestions.append('Add uppercase letters')
-    
-    if not any(c.islower() for c in password):
-        suggestions.append('Add lowercase letters')
-    
-    if not any(c.isdigit() for c in password):
-        suggestions.append('Add numbers')
-    
-    if not any(not c.isalnum() for c in password):
-        suggestions.append('Add special characters (!@#$%^&*)')
-    
-    return suggestions
-
-
 @main_bp.route('/clear-session')
 def clear_session():
     """Clear current session."""
@@ -408,80 +350,7 @@ def clear_session():
     return redirect(url_for('main.index'))
 
 
-# API Routes
-@api_bp.route('/health')
-def health():
-    """Health check endpoint."""
-    return jsonify({
-        'status': 'healthy',
-        'version': '1.0.0',
-        'timestamp': datetime.now().isoformat()
-    })
-
-
-@api_bp.route('/encrypt', methods=['POST'])
-@limiter.limit("30 per minute")
-def api_encrypt():
-    """API endpoint for encryption."""
-    try:
-        # Check authentication
-        api_key = request.headers.get('X-API-Key')
-        if not api_key or api_key != os.getenv('API_KEY'):
-            return jsonify({'error': 'Unauthorized'}), 401
-        
-        # Get file and password
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file provided'}), 400
-        
-        file = request.files['file']
-        password = request.form.get('password')
-        
-        if not password:
-            return jsonify({'error': 'No password provided'}), 400
-        
-        # Save and encrypt file
-        filepath, error = save_uploaded_file(file)
-        if error:
-            return jsonify({'error': error}), 400
-        
-        try:
-            salt = key_manager.generate_salt()
-            key = key_manager.derive_key(password, salt)
-            plaintext = FileHandler.read_file(filepath)
-            nonce, ciphertext, tag = CryptoEngine.encrypt(key, plaintext)
-            
-            # Return encrypted data as base64
-            import base64
-            result = {
-                'encrypted_data': base64.b64encode(ciphertext).decode('utf-8'),
-                'salt': base64.b64encode(salt).decode('utf-8'),
-                'nonce': base64.b64encode(nonce).decode('utf-8'),
-                'tag': base64.b64encode(tag).decode('utf-8'),
-                'algorithm': 'aes-256-gcm',
-                'kdf': 'argon2id'
-            }
-            
-            return jsonify(result)
-            
-        finally:
-            cleanup_temp_file(filepath)
-            if 'key' in locals():
-                key = b'\x00' * len(key)
-    
-    except Exception as e:
-        logger.error(f"API encryption error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@api_bp.errorhandler(429)
-def ratelimit_handler(e):
-    """Handle rate limit exceeded."""
-    return jsonify({
-        'error': 'Rate limit exceeded',
-        'retry_after': e.description.split(' ')[-1]
-    }), 429
-    
-    @main_bp.route('/results')
+@main_bp.route('/results')
 def results():
     """Show operation results."""
     operation = request.args.get('op', 'encrypt')
@@ -526,18 +395,20 @@ def update_security():
     form = SecuritySettingsForm()
     
     if form.validate_on_submit():
-        # In a real app, save these to user preferences/database
         session['security_settings'] = {
             'encryption_algorithm': form.encryption_algorithm.data,
             'key_derivation': form.key_derivation.data,
             'session_timeout': form.session_timeout.data,
             'require_2fa': form.require_2fa.data
         }
-        
         flash('Security settings updated successfully.', 'success')
     
     return redirect(url_for('main.security'))
 
+
+# ────────────────────────────────────────────────
+# Error handlers (main blueprint)
+# ────────────────────────────────────────────────
 
 @main_bp.app_errorhandler(404)
 def not_found_error(error):
@@ -548,14 +419,111 @@ def not_found_error(error):
 @main_bp.app_errorhandler(500)
 def internal_error(error):
     """Handle 500 errors."""
-    # Log the error
     current_app.logger.error(f'500 Error: {error}')
-    
-    # Generate error ID
     import uuid
     error_id = str(uuid.uuid4())[:8].upper()
-    
-    # Log with ID
     current_app.logger.error(f'Error ID: {error_id}')
-    
     return render_template('500.html', error_id=error_id), 500
+
+
+# ────────────────────────────────────────────────
+# API routes
+# ────────────────────────────────────────────────
+
+@api_bp.route('/health')
+def health():
+    """Health check endpoint."""
+    return jsonify({
+        'status': 'healthy',
+        'version': '1.0.0',
+        'timestamp': datetime.now().isoformat()
+    })
+
+
+@api_bp.route('/encrypt', methods=['POST'])
+@limiter.limit("30 per minute")
+def api_encrypt():
+    """API endpoint for encryption."""
+    try:
+        api_key = request.headers.get('X-API-Key')
+        if not api_key or api_key != os.getenv('API_KEY'):
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        password = request.form.get('password')
+        
+        if not password:
+            return jsonify({'error': 'No password provided'}), 400
+        
+        filepath, error = save_uploaded_file(file)
+        if error:
+            return jsonify({'error': error}), 400
+        
+        try:
+            salt = key_manager.generate_salt()
+            key = key_manager.derive_key(password, salt)
+            plaintext = FileHandler.read_file(filepath)
+            nonce, ciphertext, tag = CryptoEngine.encrypt(key, plaintext)
+            
+            import base64
+            result = {
+                'encrypted_data': base64.b64encode(ciphertext).decode('utf-8'),
+                'salt': base64.b64encode(salt).decode('utf-8'),
+                'nonce': base64.b64encode(nonce).decode('utf-8'),
+                'tag': base64.b64encode(tag).decode('utf-8'),
+                'algorithm': 'aes-256-gcm',
+                'kdf': 'argon2id'
+            }
+            
+            return jsonify(result)
+            
+        finally:
+            cleanup_temp_file(filepath)
+            if 'key' in locals():
+                key = b'\x00' * len(key)
+    
+    except Exception as e:
+        logger.error(f"API encryption error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@api_bp.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limit exceeded."""
+    return jsonify({
+        'error': 'Rate limit exceeded',
+        'retry_after': e.description.split(' ')[-1]
+    }), 429
+
+
+# Helper functions used in routes
+
+def get_strength_category(strength: float) -> str:
+    if strength < 0.3:
+        return 'Very Weak'
+    elif strength < 0.5:
+        return 'Weak'
+    elif strength < 0.7:
+        return 'Moderate'
+    elif strength < 0.9:
+        return 'Strong'
+    else:
+        return 'Very Strong'
+
+
+def get_password_suggestions(password: str) -> list:
+    suggestions = []
+    if len(password) < 12:
+        suggestions.append('Use at least 12 characters')
+    if not any(c.isupper() for c in password):
+        suggestions.append('Add uppercase letters')
+    if not any(c.islower() for c in password):
+        suggestions.append('Add lowercase letters')
+    if not any(c.isdigit() for c in password):
+        suggestions.append('Add numbers')
+    if not any(not c.isalnum() for c in password):
+        suggestions.append('Add special characters (!@#$%^&*)')
+    return suggestions

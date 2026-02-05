@@ -4,6 +4,7 @@ Secure key derivation and password management.
 
 import os
 import hashlib
+import base64
 from typing import Optional, Tuple
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -11,7 +12,7 @@ from cryptography.hazmat.backends import default_backend
 
 try:
     from argon2 import PasswordHasher
-    from argon2.exceptions import VerificationError
+    from argon2.low_level import hash_secret_raw, Type
     ARGON2_AVAILABLE = True
 except ImportError:
     ARGON2_AVAILABLE = False
@@ -51,14 +52,14 @@ class KeyManager:
                     memory_cost=ARGON2_MEMORY_COST,
                     parallelism=ARGON2_PARALLELISM,
                     hash_len=ARGON2_HASH_LEN,
-                    type='argon2id'  # Changed from type=2 to string
+                    type=Type.ID  # Use the enum value for argon2id
                 )
                 logger.info("Using Argon2id for key derivation")
             except Exception as e:
                 logger.warning(f"Failed to initialize Argon2: {e}. Falling back to PBKDF2.")
                 self.use_argon2 = False
         else:
-            logger.warning("Using PBKDF2-HMAC-SHA256 (Argon2 not available)")
+            logger.info("Using PBKDF2-HMAC-SHA256 for key derivation")
     
     def generate_salt(self) -> bytes:
         """
@@ -87,9 +88,8 @@ class KeyManager:
             password_bytes = password.encode('utf-8')
             
             if self.use_argon2:
-                # Argon2id - get raw hash using low-level API
+                # Argon2id - use low-level API for raw hash
                 try:
-                    from argon2.low_level import hash_secret_raw
                     raw_hash = hash_secret_raw(
                         secret=password_bytes,
                         salt=salt,
@@ -97,14 +97,15 @@ class KeyManager:
                         memory_cost=ARGON2_MEMORY_COST,
                         parallelism=ARGON2_PARALLELISM,
                         hash_len=AES_KEY_SIZE,
-                        type=2  # argon2id
+                        type=Type.ID  # argon2id
                     )
                     key = raw_hash[:AES_KEY_SIZE]
-                except ImportError:
-                    # Fallback method if low_level not available
-                    import base64
+                except Exception as e:
+                    # Fallback method
+                    logger.warning(f"Using Argon2 fallback: {e}")
+                    # Use the PasswordHasher and extract hash
                     raw_hash = self.ph.hash(
-                        password=password_bytes,
+                        password=password,
                         salt=salt,
                     )
                     # Extract hash from format: $argon2id$v=19$m=65536,t=2,p=1$salt$hash
@@ -112,6 +113,7 @@ class KeyManager:
                     if len(parts) >= 6:
                         hash_b64 = parts[-1]
                         hash_bytes = base64.b64decode(hash_b64)
+                        # Use SHA256 to ensure we have enough bytes
                         key = hashlib.sha256(hash_bytes).digest()[:AES_KEY_SIZE]
                     else:
                         raise InvalidKeyError("Failed to parse Argon2 hash")
@@ -204,3 +206,26 @@ class KeyManager:
                 return f"{years/1000:.0f} thousand years"
             else:
                 return f"{years:.0f} years"
+    
+    def get_algorithm_info(self) -> dict:
+        """
+        Get information about the key derivation algorithm being used.
+        
+        Returns:
+            dict: Algorithm information
+        """
+        if self.use_argon2:
+            return {
+                'name': 'Argon2id',
+                'time_cost': ARGON2_TIME_COST,
+                'memory_cost': ARGON2_MEMORY_COST,
+                'parallelism': ARGON2_PARALLELISM,
+                'hash_len': ARGON2_HASH_LEN
+            }
+        else:
+            return {
+                'name': 'PBKDF2-HMAC-SHA256',
+                'iterations': PBKDF2_ITERATIONS,
+                'hash_algorithm': PBKDF2_HASH_ALGORITHM,
+                'key_length': AES_KEY_SIZE
+            }

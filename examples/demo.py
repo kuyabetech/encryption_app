@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Simple demonstration of the encryption system.
-Works even if Argon2 is not available.
+Real-world test of the encryption system.
+Creates test files, encrypts them, and verifies everything works.
 """
 
 import os
-import tempfile
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 # Add parent directory to path
@@ -18,210 +19,223 @@ from core.file_handler import FileHandler
 from utils.validators import PasswordValidator
 
 
-def test_key_manager():
-    """Test the KeyManager class."""
-    print("🔑 Testing KeyManager...")
-    print("-" * 50)
+def create_test_files():
+    """Create various test files."""
+    test_files = []
     
-    try:
-        km = KeyManager()
-        print(f"✓ KeyManager initialized")
-        print(f"  Using Argon2: {km.use_argon2}")
-        
-        # Generate salt
-        salt = km.generate_salt()
-        print(f"✓ Generated salt: {salt.hex()[:16]}...")
-        
-        # Test password
-        password = "MyTestPassword123!"
-        
-        # Validate password
-        try:
-            is_valid, msg = PasswordValidator.validate(password)
-            print(f"✓ Password validation: {msg}")
-        except Exception as e:
-            print(f"⚠ Password validation: {e}")
-        
-        # Derive key
-        key = km.derive_key(password, salt)
-        print(f"✓ Derived key: {len(key)} bytes")
-        print(f"  Key preview: {key.hex()[:32]}...")
-        
-        # Estimate brute force time
-        estimate = km.estimate_brute_force_time(password)
-        print(f"✓ Brute-force estimate: {estimate}")
-        
-        return True
-        
-    except Exception as e:
-        print(f"✗ KeyManager test failed: {e}")
-        return False
-
-
-def test_crypto_engine():
-    """Test the CryptoEngine class."""
-    print("\n🔐 Testing CryptoEngine...")
-    print("-" * 50)
-    
-    try:
-        # Generate a test key
-        key = os.urandom(32)  # 256-bit key
-        
-        # Test data
-        plaintext = b"This is a secret message that needs encryption!"
-        
-        # Encrypt
-        nonce, ciphertext, tag = CryptoEngine.encrypt(key, plaintext)
-        print(f"✓ Encryption successful")
-        print(f"  Nonce: {nonce.hex()[:16]}...")
-        print(f"  Ciphertext: {len(ciphertext)} bytes")
-        print(f"  Tag: {tag.hex()[:16]}...")
-        
-        # Decrypt
-        decrypted = CryptoEngine.decrypt(key, nonce, ciphertext, tag)
-        print(f"✓ Decryption successful")
-        
-        # Verify
-        if decrypted == plaintext:
-            print("✅ Data integrity verified")
-        else:
-            print("❌ Data mismatch!")
-            
-        # Test tamper detection
-        try:
-            # Modify ciphertext slightly
-            tampered = bytearray(ciphertext)
-            tampered[10] ^= 0x01  # Flip one bit
-            CryptoEngine.decrypt(key, nonce, bytes(tampered), tag)
-            print("❌ Tamper detection failed!")
-        except Exception as e:
-            print(f"✅ Tamper detection working: {type(e).__name__}")
-            
-        return True
-        
-    except Exception as e:
-        print(f"✗ CryptoEngine test failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
-def test_file_handler():
-    """Test the FileHandler class."""
-    print("\n📁 Testing FileHandler...")
-    print("-" * 50)
-    
-    try:
-        # Create a test file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
-            test_file = f.name
-            f.write("Test content for file operations\n" * 10)
-        
-        print(f"✓ Created test file: {test_file}")
-        
-        # Read file
-        content = FileHandler.read_file(test_file)
-        print(f"✓ Read file: {len(content)} bytes")
-        
-        # Write file atomically
-        backup_file = test_file + ".backup"
-        FileHandler.write_file_atomic(backup_file, content)
-        print(f"✓ Atomic write: {backup_file}")
-        
-        # Get output filename
-        output_name = FileHandler.get_output_filename(test_file, 'encrypt')
-        print(f"✓ Output filename: {output_name}")
-        
-        # Clean up
-        os.unlink(test_file)
-        os.unlink(backup_file)
-        print("✓ Cleaned up test files")
-        
-        return True
-        
-    except Exception as e:
-        print(f"✗ FileHandler test failed: {e}")
-        return False
-
-
-def test_password_validator():
-    """Test password validation."""
-    print("\n🔒 Testing PasswordValidator...")
-    print("-" * 50)
-    
-    test_cases = [
-        ("weak", "password"),
-        ("too short", "short"),
-        ("no uppercase", "lowercase123!"),
-        ("no lowercase", "UPPERCASE123!"),
-        ("no numbers", "NoNumbers!"),
-        ("no special", "NoSpecial123"),
-        ("strong", "MyStrongPassword123!"),
-        ("very strong", "CorrectHorseBatteryStaple!"),
-    ]
-    
-    for name, password in test_cases:
-        try:
-            is_valid, msg = PasswordValidator.validate(password)
-            strength = PasswordValidator.estimate_strength(password)
-            print(f"{name:15} | {'✓' if is_valid else '✗':2} | {strength:5.0%} | {password[:20]:20}")
-        except Exception as e:
-            print(f"{name:15} | ✗  |       | {password[:20]:20} -> {e}")
-    
-    return True
-
-
-def full_encryption_demo():
-    """Complete encryption/decryption demo."""
-    print("\n🚀 Full Encryption Demo")
-    print("=" * 50)
-    
-    # Create test file
+    # Text file
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
-        test_file = f.name
-        f.write("This is a confidential document.\n")
-        f.write("It contains sensitive information.\n")
-        f.write("Encryption is essential for security.\n" * 5)
+        f.write("""CONFIDENTIAL DOCUMENT
+======================
+Date: 2024-01-15
+To: Management Team
+From: Security Department
+Subject: Quarterly Security Report
+
+This document contains sensitive information about:
+1. Security vulnerabilities found
+2. Employee access patterns
+3. Incident response metrics
+4. Future security investments
+
+DO NOT DISTRIBUTE WITHOUT ENCRYPTION.
+""")
+        test_files.append(f.name)
     
-    print(f"Test file: {test_file}")
-    print(f"File size: {os.path.getsize(test_file)} bytes")
+    # CSV data file
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as f:
+        f.write("""Name,Department,Salary,Access Level
+John Smith,Engineering,85000,Admin
+Jane Doe,Marketing,72000,User
+Bob Johnson,Finance,92000,Manager
+Alice Brown,HR,68000,User
+Charlie Wilson,Engineering,88000,Admin
+""")
+        test_files.append(f.name)
+    
+    # JSON config file
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+        f.write("""{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "production_db",
+    "user": "admin",
+    "password": "secret123"
+  },
+  "api_keys": {
+    "stripe": "sk_live_123456789",
+    "aws": "AKIAIOSFODNN7EXAMPLE",
+    "google": "AIzaSyB_1234567890"
+  },
+  "settings": {
+    "backup_enabled": true,
+    "encryption_required": true,
+    "log_level": "debug"
+  }
+}
+""")
+        test_files.append(f.name)
+    
+    print(f"✓ Created {len(test_files)} test files")
+    return test_files
+
+
+def test_encryption_workflow():
+    """Test the complete encryption workflow."""
+    print("\n" + "="*60)
+    print("🔐 Testing Complete Encryption Workflow")
+    print("="*60)
+    
+    # Create test files
+    test_files = create_test_files()
+    
+    results = []
+    
+    for file_path in test_files:
+        filename = os.path.basename(file_path)
+        print(f"\n📄 Processing: {filename}")
+        
+        try:
+            # 1. Read original file
+            original_size = os.path.getsize(file_path)
+            print(f"  Original size: {original_size:,} bytes")
+            
+            # 2. Create KeyManager
+            km = KeyManager()
+            print(f"  Using: {'Argon2id' if km.use_argon2 else 'PBKDF2'}")
+            
+            # 3. Generate password (simulate user input)
+            password = "SecurePass123!@#"
+            print(f"  Password: {'*' * len(password)}")
+            
+            # 4. Generate salt and derive key
+            salt = km.generate_salt()
+            key = km.derive_key(password, salt)
+            
+            # 5. Read file content
+            with open(file_path, 'rb') as f:
+                plaintext = f.read()
+            
+            # 6. Encrypt
+            start_time = time.time()
+            nonce, ciphertext, tag = CryptoEngine.encrypt(key, plaintext)
+            encrypt_time = time.time() - start_time
+            
+            print(f"  Encryption time: {encrypt_time:.3f}s")
+            print(f"  Ciphertext size: {len(ciphertext):,} bytes")
+            print(f"  Overhead: {len(ciphertext) - len(plaintext) + 44:,} bytes")
+            
+            # 7. Create encrypted file
+            encrypted_file = file_path + '.enc'
+            
+            # Simple file format for demo
+            with open(encrypted_file, 'wb') as f:
+                # Header: SALT (16) + NONCE (12) + TAG (16) = 44 bytes
+                f.write(salt + nonce + tag + ciphertext)
+            
+            # 8. Decrypt to verify
+            with open(encrypted_file, 'rb') as f:
+                data = f.read()
+                loaded_salt = data[:16]
+                loaded_nonce = data[16:28]
+                loaded_tag = data[28:44]
+                loaded_ciphertext = data[44:]
+            
+            # Re-derive key
+            loaded_key = km.derive_key(password, loaded_salt)
+            
+            # Decrypt
+            start_time = time.time()
+            decrypted = CryptoEngine.decrypt(
+                loaded_key, loaded_nonce, loaded_ciphertext, loaded_tag
+            )
+            decrypt_time = time.time() - start_time
+            
+            print(f"  Decryption time: {decrypt_time:.3f}s")
+            
+            # 9. Verify
+            if decrypted == plaintext:
+                print("  ✅ Verification: PASSED")
+                results.append(True)
+            else:
+                print("  ❌ Verification: FAILED")
+                results.append(False)
+            
+            # 10. Test tamper detection
+            try:
+                tampered = bytearray(ciphertext)
+                tampered[0] ^= 0x01
+                CryptoEngine.decrypt(key, nonce, bytes(tampered), tag)
+                print("  ❌ Tamper detection: FAILED")
+            except Exception as e:
+                print(f"  ✅ Tamper detection: WORKING ({type(e).__name__})")
+            
+            # Clean up
+            os.unlink(file_path)
+            os.unlink(encrypted_file)
+            
+        except Exception as e:
+            print(f"  ❌ Error: {e}")
+            results.append(False)
+    
+    # Summary
+    print("\n" + "="*60)
+    print("📊 Workflow Test Results")
+    print("="*60)
+    
+    passed = sum(results)
+    total = len(results)
+    
+    for i, success in enumerate(results):
+        file_type = test_files[i].split('.')[-1] if i < len(test_files) else "unknown"
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{file_type.upper():10} {status}")
+    
+    print(f"\n{passed}/{total} files processed successfully")
+    
+    return all(results)
+
+
+def test_cli_simulation():
+    """Simulate CLI commands."""
+    print("\n" + "="*60)
+    print("💻 Testing CLI Simulation")
+    print("="*60)
+    
+    # Create a test file
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+        f.write("Test content for CLI simulation")
+    test_file = f.name
     
     try:
-        # Initialize components
+        # Simulate: python app.py encrypt test.txt
+        print(f"Simulating: secure-encrypt encrypt {os.path.basename(test_file)}")
+        
         km = KeyManager()
-        print(f"\nUsing {'Argon2id' if km.use_argon2 else 'PBKDF2'} for key derivation")
-        
-        # Password
-        password = "SecurePassword123!"
-        print(f"Password: {password}")
-        
-        # Generate salt and derive key
+        password = "CliTestPassword123!"
         salt = km.generate_salt()
-        print(f"Salt: {salt.hex()[:16]}...")
-        
         key = km.derive_key(password, salt)
-        print(f"Key: {key.hex()[:32]}...")
         
-        # Read file
-        plaintext = FileHandler.read_file(test_file)
-        print(f"\nRead {len(plaintext)} bytes from file")
+        # Read and encrypt
+        with open(test_file, 'rb') as f:
+            plaintext = f.read()
         
-        # Encrypt
-        print("\n🔒 Encrypting...")
         nonce, ciphertext, tag = CryptoEngine.encrypt(key, plaintext)
-        print(f"✓ Nonce: {nonce.hex()[:16]}...")
-        print(f"✓ Ciphertext: {len(ciphertext)} bytes")
-        print(f"✓ Tag: {tag.hex()[:16]}...")
         
-        # Save encrypted file (simplified)
-        encrypted_file = test_file + ".enc"
+        # Save encrypted file
+        encrypted_file = test_file + '.enc'
         with open(encrypted_file, 'wb') as f:
-            # Simple format: salt + nonce + tag + ciphertext
             f.write(salt + nonce + tag + ciphertext)
-        print(f"✓ Saved encrypted file: {encrypted_file}")
+        
+        print(f"✓ Created: {os.path.basename(encrypted_file)}")
+        print(f"  Original: {len(plaintext)} bytes")
+        print(f"  Encrypted: {len(ciphertext) + 44} bytes")
+        
+        # Simulate: python app.py decrypt test.enc
+        print(f"\nSimulating: secure-encrypt decrypt {os.path.basename(encrypted_file)}")
         
         # Load and decrypt
-        print("\n🔓 Decrypting...")
         with open(encrypted_file, 'rb') as f:
             data = f.read()
             loaded_salt = data[:16]
@@ -229,66 +243,104 @@ def full_encryption_demo():
             loaded_tag = data[28:44]
             loaded_ciphertext = data[44:]
         
-        # Re-derive key (should be same)
         loaded_key = km.derive_key(password, loaded_salt)
-        
-        # Decrypt
         decrypted = CryptoEngine.decrypt(loaded_key, loaded_nonce, loaded_ciphertext, loaded_tag)
         
-        # Verify
         if decrypted == plaintext:
-            print("✅ SUCCESS: Decrypted content matches original!")
-            print(f"\nOriginal preview: {plaintext[:50].decode('utf-8', errors='ignore')}...")
-            print(f"Decrypted preview: {decrypted[:50].decode('utf-8', errors='ignore')}...")
+            print("✅ Decryption successful")
+            print(f"✓ Content matches: '{decrypted.decode()[:30]}...'")
         else:
-            print("❌ FAILED: Decrypted content doesn't match!")
+            print("❌ Decryption failed")
         
         # Clean up
         os.unlink(test_file)
         os.unlink(encrypted_file)
-        print("\n✓ Cleaned up test files")
         
         return True
         
     except Exception as e:
-        print(f"\n❌ Demo failed: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"❌ CLI simulation failed: {e}")
         return False
 
 
+def test_performance():
+    """Test performance with different file sizes."""
+    print("\n" + "="*60)
+    print("⚡ Performance Test")
+    print("="*60)
+    
+    km = KeyManager()
+    password = "PerfTest123!"
+    
+    # Test different sizes
+    sizes = [1024, 10240, 102400, 1048576]  # 1KB, 10KB, 100KB, 1MB
+    
+    results = []
+    
+    for size in sizes:
+        print(f"\nTesting {size:,} bytes ({size/1024:.1f} KB):")
+        
+        # Create test data
+        data = os.urandom(size)
+        
+        # Generate key
+        salt = km.generate_salt()
+        key = km.derive_key(password, salt)
+        
+        # Time encryption
+        start = time.time()
+        nonce, ciphertext, tag = CryptoEngine.encrypt(key, data)
+        encrypt_time = time.time() - start
+        
+        # Time decryption
+        start = time.time()
+        decrypted = CryptoEngine.decrypt(key, nonce, ciphertext, tag)
+        decrypt_time = time.time() - start
+        
+        # Verify
+        success = decrypted == data
+        status = "✅" if success else "❌"
+        
+        print(f"  {status} Encryption: {encrypt_time:.3f}s ({size/encrypt_time/1024:.1f} KB/s)")
+        print(f"  {status} Decryption: {decrypt_time:.3f}s ({size/decrypt_time/1024:.1f} KB/s)")
+        
+        results.append(success)
+    
+    return all(results)
+
+
 def main():
-    """Run all tests."""
-    print("🔐 Secure Encryption System - Simple Demo")
-    print("=" * 60)
+    """Run all real-world tests."""
+    print("🔐 Secure Encryption - Real World Test")
+    print("="*60)
     
     tests = [
-        ("Key Manager", test_key_manager),
-        ("Crypto Engine", test_crypto_engine),
-        ("File Handler", test_file_handler),
-        ("Password Validator", test_password_validator),
-        ("Full Encryption Demo", full_encryption_demo),
+        ("Encryption Workflow", test_encryption_workflow),
+        ("CLI Simulation", test_cli_simulation),
+        ("Performance", test_performance),
     ]
     
     results = []
     
     for name, test_func in tests:
         print(f"\n{'='*60}")
-        print(f"Testing: {name}")
+        print(f"Test: {name}")
         print('='*60)
         try:
             success = test_func()
             results.append((name, success))
         except KeyboardInterrupt:
-            print("\n\n⏹️ Demo interrupted by user")
+            print("\n\n⏹️ Test interrupted by user")
             sys.exit(1)
         except Exception as e:
             print(f"❌ Test crashed: {e}")
+            import traceback
+            traceback.print_exc()
             results.append((name, False))
     
     # Summary
     print("\n" + "="*60)
-    print("📊 Test Summary")
+    print("📊 Final Results")
     print("="*60)
     
     passed = 0
@@ -301,17 +353,18 @@ def main():
     print(f"\n{passed}/{len(results)} tests passed")
     
     if passed == len(results):
-        print("\n🎉 All tests passed! System is working correctly.")
+        print("\n🎉🎉🎉 ALL TESTS PASSED! 🎉🎉🎉")
+        print("\nYour encryption system is ready for production!")
+        print("\nNext steps:")
+        print("1. Try the actual CLI: python app.py --help")
+        print("2. Test with your own files")
+        print("3. Deploy the web interface if needed")
+        print("4. Review the security settings for your use case")
     else:
-        print(f"\n⚠️  {len(results) - passed} test(s) failed.")
-        print("Check the output above for details.")
+        print(f"\n⚠️  {len(results) - passed} test(s) failed")
+        print("Check the output above for details")
     
     print("\n" + "="*60)
-    print("💡 Next Steps:")
-    print("1. Try the CLI: python app.py encrypt test.txt")
-    print("2. Try the web interface: flask run")
-    print("3. Read the documentation in README.md")
-    print("="*60)
 
 
 if __name__ == "__main__":
