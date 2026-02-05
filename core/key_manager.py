@@ -44,14 +44,19 @@ class KeyManager:
         self.use_argon2 = use_argon2 and ARGON2_AVAILABLE
         
         if self.use_argon2:
-            self.ph = PasswordHasher(
-                time_cost=ARGON2_TIME_COST,
-                memory_cost=ARGON2_MEMORY_COST,
-                parallelism=ARGON2_PARALLELISM,
-                hash_len=ARGON2_HASH_LEN,
-                type=2  # Argon2id
-            )
-            logger.info("Using Argon2id for key derivation")
+            try:
+                # Try to initialize Argon2 with correct parameters
+                self.ph = PasswordHasher(
+                    time_cost=ARGON2_TIME_COST,
+                    memory_cost=ARGON2_MEMORY_COST,
+                    parallelism=ARGON2_PARALLELISM,
+                    hash_len=ARGON2_HASH_LEN,
+                    type='argon2id'  # Changed from type=2 to string
+                )
+                logger.info("Using Argon2id for key derivation")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Argon2: {e}. Falling back to PBKDF2.")
+                self.use_argon2 = False
         else:
             logger.warning("Using PBKDF2-HMAC-SHA256 (Argon2 not available)")
     
@@ -82,17 +87,34 @@ class KeyManager:
             password_bytes = password.encode('utf-8')
             
             if self.use_argon2:
-                # Argon2id
-                raw_hash = self.ph.hash(password=password_bytes, salt=salt)
-                # Extract the raw hash bytes (last ARGON2_HASH_LEN bytes of hash)
-                # Note: This is simplified - in production, use proper raw hash extraction
-                key = hashlib.sha256(raw_hash.encode()).digest()
-                
-                # Ensure key is correct length
-                if len(key) < AES_KEY_SIZE:
-                    # Repeat hash if needed (shouldn't happen with SHA256)
-                    key = hashlib.sha256(key).digest()
-                key = key[:AES_KEY_SIZE]
+                # Argon2id - get raw hash using low-level API
+                try:
+                    from argon2.low_level import hash_secret_raw
+                    raw_hash = hash_secret_raw(
+                        secret=password_bytes,
+                        salt=salt,
+                        time_cost=ARGON2_TIME_COST,
+                        memory_cost=ARGON2_MEMORY_COST,
+                        parallelism=ARGON2_PARALLELISM,
+                        hash_len=AES_KEY_SIZE,
+                        type=2  # argon2id
+                    )
+                    key = raw_hash[:AES_KEY_SIZE]
+                except ImportError:
+                    # Fallback method if low_level not available
+                    import base64
+                    raw_hash = self.ph.hash(
+                        password=password_bytes,
+                        salt=salt,
+                    )
+                    # Extract hash from format: $argon2id$v=19$m=65536,t=2,p=1$salt$hash
+                    parts = raw_hash.split('$')
+                    if len(parts) >= 6:
+                        hash_b64 = parts[-1]
+                        hash_bytes = base64.b64decode(hash_b64)
+                        key = hashlib.sha256(hash_bytes).digest()[:AES_KEY_SIZE]
+                    else:
+                        raise InvalidKeyError("Failed to parse Argon2 hash")
             else:
                 # PBKDF2-HMAC-SHA256 fallback
                 kdf = PBKDF2HMAC(
