@@ -1,0 +1,15 @@
+# Web interface dependencies
+Flask>=2.3.0
+Flask-WTF>=1.0.0
+Flask-Limiter>=3.0.0
+Flask-Session>=0.5.0
+python-dotenv>=1.0.0
+Werkzeug>=2.3.0
+
+# Existing crypto dependencies
+#cryptography>=42.0.0
+#argon2-cffi>=23.1.0
+
+# Optional: for better security headers
+Flask-Talisman>=1.0.0
+Flask-CORS>=4.0.0

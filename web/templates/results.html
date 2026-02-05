@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}Results - Secure File Encryption{% endblock %}
+
+{% block extra_head %}
+<style>
+.result-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.result-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+.result-success {
+    color: var(--success-color);
+}
+.result-error {
+    color: var(--danger-color);
+}
+.result-warning {
+    color: var(--warning-color);
+}
+.download-btn {
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+.download-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+.file-details {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.detail-item:last-child {
+    border-bottom: none;
+}
+.security-steps {
+    counter-reset: step;
+}
+.security-step {
+    position: relative;
+    padding-left: 3rem;
+    margin-bottom: 1.5rem;
+}
+.security-step:before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2rem;
+    height: 2rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.action-buttons .btn {
+    min-width: 200px;
+}
+.encryption-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+.stat-card {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+.stat-label {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        {% if operation == 'encrypt' %}
+            <!-- Encryption Results -->
+            <div class="result-card bg-dark border border-success">
+                <div class="card-body text-center p-5">
+                    <div class="result-icon result-success">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    
+                    <h1 class="mb-3">✅ File Encrypted Successfully!</h1>
+                    <p class="lead mb-4">
+                        Your file has been encrypted with military-grade AES-256-GCM encryption.
+                    </p>
+                    
+                    <!-- File Details -->
+                    <div class="file-details mb-4">
+                        <div class="detail-item">
+                            <span>Original File:</span>
+                            <strong>{{ original_filename }}</strong>
+                        </div>
+                        <div class="detail-item">
+                            <span>Encrypted File:</span>
+                            <strong>{{ encrypted_filename }}</strong>
+                        </div>
+                        <div class="detail-item">
+                            <span>Original Size:</span>
+                            <span>{{ original_size }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Encrypted Size:</span>
+                            <span>{{ encrypted_size }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Encryption Algorithm:</span>
+                            <span>AES-256-GCM</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Key Derivation:</span>
+                            <span>Argon2id</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Timestamp:</span>
+                            <span>{{ timestamp }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Button -->
+                    <div class="mb-4">
+                        <a href="{{ url_for('main.download', filename=encrypted_filename) }}" 
+                           class="btn btn-success download-btn">
+                            <i class="bi bi-download"></i> Download Encrypted File
+                        </a>
+                    </div>
+                    
+                    <!-- Additional Actions -->
+                    <div class="action-buttons mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <a href="{{ url_for('main.encrypt') }}" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-plus-circle"></i> Encrypt Another
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{{ url_for('main.decrypt') }}" class="btn btn-outline-warning w-100">
+                                    <i class="bi bi-unlock"></i> Decrypt File
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-info w-100" onclick="showSecurityInfo()">
+                                    <i class="bi bi-shield"></i> Security Info
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Security Information (Hidden by Default) -->
+                    <div class="security-info mt-4" id="securityInfo" style="display: none;">
+                        <div class="alert alert-info">
+                            <h5><i class="bi bi-info-circle"></i> What Just Happened</h5>
+                            <div class="security-steps">
+                                <div class="security-step">
+                                    <strong>Password Processing:</strong> Your password was converted to a 256-bit encryption key using Argon2id.
+                                </div>
+                                <div class="security-step">
+                                    <strong>File Encryption:</strong> The file was encrypted using AES-256-GCM with a unique random nonce.
+                                </div>
+                                <div class="security-step">
+                                    <strong>Authentication:</strong> An authentication tag was generated to detect tampering.
+                                </div>
+                                <div class="security-step">
+                                    <strong>Metadata:</strong> Salt, nonce, and tag were packaged with the encrypted data.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Encryption Statistics -->
+                    <div class="encryption-stats">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ compression_ratio }}%</div>
+                            <div class="stat-label">Size Increase</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">{{ encryption_time }}s</div>
+                            <div class="stat-label">Encryption Time</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">256-bit</div>
+                            <div class="stat-label">Key Strength</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">AES-GCM</div>
+                            <div class="stat-label">Algorithm</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Critical Warning -->
+            <div class="alert alert-danger mt-4">
+                <h4><i class="bi bi-exclamation-triangle"></i> CRITICAL WARNING</h4>
+                <ul class="mb-0">
+                    <li><strong>Keep your password safe!</strong> Without it, the file is permanently lost.</li>
+                    <li><strong>Store encrypted files separately</strong> from passwords.</li>
+                    <li><strong>Test decryption</strong> before deleting original files.</li>
+                    <li><strong>Consider backing up</strong> to multiple locations.</li>
+                </ul>
+            </div>
+            
+        {% elif operation == 'decrypt' %}
+            <!-- Decryption Results -->
+            <div class="result-card bg-dark border border-success">
+                <div class="card-body text-center p-5">
+                    <div class="result-icon result-success">
+                        <i class="bi bi-unlock-fill"></i>
+                    </div>
+                    
+                    <h1 class="mb-3">✅ File Decrypted Successfully!</h1>
+                    <p class="lead mb-4">
+                        Your file has been verified and decrypted. Authentication tag confirmed - file is authentic.
+                    </p>
+                    
+                    <!-- File Details -->
+                    <div class="file-details mb-4">
+                        <div class="detail-item">
+                            <span>Encrypted File:</span>
+                            <strong>{{ encrypted_filename }}</strong>
+                        </div>
+                        <div class="detail-item">
+                            <span>Decrypted File:</span>
+                            <strong>{{ decrypted_filename }}</strong>
+                        </div>
+                        <div class="detail-item">
+                            <span>File Size:</span>
+                            <span>{{ file_size }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Integrity Check:</span>
+                            <span class="text-success">✓ PASSED</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Authentication:</span>
+                            <span class="text-success">✓ VERIFIED</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Algorithm:</span>
+                            <span>AES-256-GCM</span>
+                        </div>
+                        <div class="detail-item">
+                            <span>Timestamp:</span>
+                            <span>{{ timestamp }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Button -->
+                    <div class="mb-4">
+                        <a href="{{ url_for('main.download', filename=decrypted_filename) }}" 
+                           class="btn btn-success download-btn">
+                            <i class="bi bi-download"></i> Download Decrypted File
+                        </a>
+                    </div>
+                    
+                    <!-- Security Information -->
+                    <div class="alert alert-success">
+                        <h5><i class="bi bi-shield-check"></i> Security Verification Complete</h5>
+                        <p class="mb-0">
+                            The authentication tag was successfully verified, confirming that:
+                        </p>
+                        <ul class="mb-0 mt-2">
+                            <li>The file was encrypted with the provided password</li>
+                            <li>The file has not been tampered with or corrupted</li>
+                            <li>The encryption metadata is intact and valid</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('main.decrypt') }}" class="btn btn-outline-warning w-100">
+                                    <i class="bi bi-unlock"></i> Decrypt Another
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('main.encrypt') }}" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-lock"></i> Encrypt File
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Next Steps -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <h5><i class="bi bi-check-circle"></i> What to Do Next</h5>
+                            <ul class="mb-0">
+                                <li>Verify the decrypted file opens correctly</li>
+                                <li>Securely delete the encrypted version if no longer needed</li>
+                                <li>Consider re-encrypting with a stronger password</li>
+                                <li>Update your password manager with the new password</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <h5><i class="bi bi-exclamation-triangle"></i> Security Reminder</h5>
+                            <p class="mb-0">
+                                This file is now unencrypted and vulnerable. 
+                                Re-encrypt it if you need to store or transmit it securely.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        {% elif operation == 'error' %}
+            <!-- Error Results -->
+            <div class="result-card bg-dark border border-danger">
+                <div class="card-body text-center p-5">
+                    <div class="result-icon result-error">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    
+                    <h1 class="mb-3">❌ Operation Failed</h1>
+                    <p class="lead mb-4">
+                        {{ error_message }}
+                    </p>
+                    
+                    <div class="alert alert-danger mb-4">
+                        <h5><i class="bi bi-bug"></i> Error Details</h5>
+                        <pre class="mb-0">{{ error_details }}</pre>
+                    </div>
+                    
+                    <!-- Possible Solutions -->
+                    <div class="card border-warning mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Try These Solutions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>For Decryption Errors:</h6>
+                                    <ul>
+                                        <li>Double-check your password</li>
+                                        <li>Ensure the file is a valid .enc file</li>
+                                        <li>Try downloading the file again</li>
+                                        <li>Check for file corruption</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>For Encryption Errors:</h6>
+                                    <ul>
+                                        <li>Verify file permissions</li>
+                                        <li>Check available disk space</li>
+                                        <li>Try a different filename</li>
+                                        <li>Restart the application</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <div class="row g-3">
+                            {% if error_type == 'decryption' %}
+                            <div class="col-md-6">
+                                <a href="{{ url_for('main.decrypt') }}" class="btn btn-outline-warning w-100">
+                                    <i class="bi bi-arrow-clockwise"></i> Try Again
+                                </a>
+                            </div>
+                            {% else %}
+                            <div class="col-md-6">
+                                <a href="{{ url_for('main.encrypt') }}" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-arrow-clockwise"></i> Try Again
+                                </a>
+                            </div>
+                            {% endif %}
+                            <div class="col-md-6">
+                                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-house-door"></i> Return Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Technical Support -->
+            <div class="alert alert-info mt-4">
+                <h5><i class="bi bi-life-preserver"></i> Need Help?</h5>
+                <p class="mb-0">
+                    If the problem persists, please:
+                </p>
+                <ul class="mb-0">
+                    <li>Check the <a href="#" class="alert-link">documentation</a></li>
+                    <li>Review the error log in the console</li>
+                    <li>Contact support with the error details above</li>
+                    <li>Try the CLI version for more detailed error messages</li>
+                </ul>
+            </div>
+            
+        {% elif operation == 'info' %}
+            <!-- File Information Results -->
+            <div class="result-card bg-dark border border-info">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="result-icon result-warning">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <h1>📄 File Information</h1>
+                        <p class="lead">{{ filename }}</p>
+                    </div>
+                    
+                    <!-- File Metadata -->
+                    <div class="file-details mb-4">
+                        <h4 class="mb-3"><i class="bi bi-info-circle"></i> Metadata</h4>
+                        {% for key, value in metadata.items() %}
+                        <div class="detail-item">
+                            <span>{{ key|replace('_', ' ')|title }}:</span>
+                            <code>{{ value }}</code>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Security Analysis -->
+                    <div class="card border-warning mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="bi bi-shield-check"></i> Security Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>✅ Strengths:</h6>
+                                    <ul>
+                                        <li>AES-256-GCM encryption</li>
+                                        <li>Authentication tag present</li>
+                                        <li>Unique nonce for each encryption</li>
+                                        <li>Argon2 key derivation</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>⚠️ Considerations:</h6>
+                                    <ul>
+                                        <li>Password strength unknown</li>
+                                        <li>File age: {{ file_age }} days</li>
+                                        <li>No backup status available</li>
+                                        <li>Encryption context unknown</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="text-center">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <a href="{{ url_for('main.decrypt') }}" class="btn btn-warning w-100">
+                                    <i class="bi bi-unlock"></i> Decrypt This File
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{{ url_for('main.encrypt') }}" class="btn btn-primary w-100">
+                                    <i class="bi bi-lock"></i> Encrypt New File
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{{ url_for('main.index') }}" class="btn btn-secondary w-100">
+                                    <i class="bi bi-house-door"></i> Return Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Auto-download script (if applicable) -->
+{% if auto_download %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        window.location.href = "{{ download_url }}";
+    }, 2000);
+});
+</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showSecurityInfo() {
+    const securityInfo = document.getElementById('securityInfo');
+    if (securityInfo.style.display === 'none') {
+        securityInfo.style.display = 'block';
+    } else {
+        securityInfo.style.display = 'none';
+    }
+}
+
+// Copy filename to clipboard
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard: ' + text);
+    });
+}
+
+// Print results
+function printResults() {
+    window.print();
+}
+
+// Generate password reminder
+function generateReminder() {
+    const reminder = `
+IMPORTANT: File Encryption Details
+==================================
+File: {{ filename }}
+Encrypted: {{ timestamp }}
+Algorithm: AES-256-GCM
+Key Derivation: Argon2id
+
+REMEMBER: Without the password, this file is permanently lost!
+`;
+    
+    const blob = new Blob([reminder], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'encryption-reminder.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

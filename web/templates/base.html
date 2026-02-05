@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Secure File Encryption{% endblock %}</title>
+    
+    <!-- Bootstrap 5 Dark Theme -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@1.1.3/dist/css/bootstrap-dark.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Security Meta Tags -->
+    <meta name="description" content="Secure file encryption using AES-256-GCM and Argon2">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' https://cdn.jsdelivr.net;">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="bi bi-shield-lock-fill"></i> Secure Encrypt
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.index') }}">
+                            <i class="bi bi-house-door"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.encrypt') }}">
+                            <i class="bi bi-file-earmark-lock"></i> Encrypt
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.decrypt') }}">
+                            <i class="bi bi-file-earmark-unlock"></i> Decrypt
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.security') }}">
+                            <i class="bi bi-shield-check"></i> Security
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="navbar-text">
+                    <i class="bi bi-laptop"></i> Client-side processing • No data stored
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-dark border-top border-secondary">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <span class="text-muted">
+                        <i class="bi bi-shield-shaded"></i> 
+                        Secure File Encryption v1.0 • 
+                        <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#securityModal">
+                            Security Info
+                        </a>
+                    </span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="text-muted">
+                        <i class="bi bi-github"></i> 
+                        <a href="https://github.com/yourusername/secure-encrypt" class="text-decoration-none">GitHub</a> • 
+                        <i class="bi bi-shield-exclamation"></i> 
+                        <a href="#" class="text-decoration-none" onclick="clearSession()">Clear Session</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Security Modal -->
+    <div class="modal fade" id="securityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-shield-check"></i> Security Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>🔐 How It Works</h6>
+                    <ul>
+                        <li>Files are encrypted <strong>client-side</strong> before upload</li>
+                        <li>Uses <strong>AES-256-GCM</strong> authenticated encryption</li>
+                        <li>Keys derived with <strong>Argon2id</strong> (memory-hard)</li>
+                        <li>Files are <strong>never stored</strong> on our servers</li>
+                        <li>All processing happens in your browser</li>
+                    </ul>
+                    
+                    <h6>⚠️ Security Notice</h6>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Never</strong> encrypt files you don't have backed up elsewhere.
+                        Lose the password = lose the files forever.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+    
+    <script>
+        function clearSession() {
+            if (confirm('Clear all session data? This will log you out.')) {
+                window.location.href = "{{ url_for('main.clear_session') }}";
+            }
+        }
+        
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                bootstrap.Alert.getOrCreateInstance(alert).close();
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

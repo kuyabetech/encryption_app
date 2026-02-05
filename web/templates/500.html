@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Secure File Encryption{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <div class="error-icon mb-4">
+                <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+            </div>
+            
+            <h1 class="display-4 fw-bold mb-3">500 - Server Error</h1>
+            
+            <div class="card border-danger mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">
+                        <i class="bi bi-bug"></i> Internal Server Error
+                    </h4>
+                    <p class="card-text">
+                        Something went wrong on our end. Our team has been notified and is working to fix the issue.
+                    </p>
+                    
+                    <div class="alert alert-dark">
+                        <h6><i class="bi bi-info-circle"></i> Error Reference</h6>
+                        <code class="small">Error ID: {{ error_id or 'UNKNOWN' }}</code>
+                        <br>
+                        <small class="text-muted">Include this ID when reporting the issue</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Immediate Actions -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-secondary">
+                        <div class="card-body">
+                            <h6><i class="bi bi-arrow-clockwise"></i> Try Again</h6>
+                            <p>Refresh the page or try again in a few moments.</p>
+                            <button onclick="location.reload()" class="btn btn-secondary w-100">
+                                Refresh Page
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-primary">
+                        <div class="card-body">
+                            <h6><i class="bi bi-house-door"></i> Go Home</h6>
+                            <p>Return to the home page and try a different action.</p>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary w-100">
+                                Home Page
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-warning">
+                        <div class="card-body">
+                            <h6><i class="bi bi-tools"></i> Alternative</h6>
+                            <p>Use the CLI version as a temporary workaround.</p>
+                            <a href="#" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#cliModal">
+                                CLI Instructions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- What You Can Do -->
+            <div class="card border-info mb-4">
+                <div class="card-header bg-info text-dark">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> What You Can Do</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Immediate Steps:</h6>
+                            <ul class="text-start">
+                                <li>Clear browser cache and cookies</li>
+                                <li>Try a different browser</li>
+                                <li>Check your internet connection</li>
+                                <li>Disable browser extensions temporarily</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>If Problem Persists:</h6>
+                            <ul class="text-start">
+                                <li>Try again in 15-30 minutes</li>
+                                <li>Check our status page</li>
+                                <li>Use the CLI tool</li>
+                                <li>Contact support with error details</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Assurance -->
+            <div class="alert alert-success">
+                <h5><i class="bi bi-shield-check"></i> Security Assurance</h5>
+                <p class="mb-0">
+                    <strong>Your data is safe.</strong> This error occurred during page rendering, 
+                    not during file encryption/decryption. No sensitive data was exposed.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CLI Modal -->
+<div class="modal fade" id="cliModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-terminal"></i> CLI Tool Instructions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>As an alternative to the web interface, use our command-line tool:</p>
+                
+                <div class="code-block bg-dark p-3 rounded mb-3">
+                    <pre class="mb-0 text-light">
+# Install CLI
+pip install secure-encrypt
+
+# Encrypt a file
+secure-encrypt encrypt document.pdf
+
+# Decrypt a file
+secure-encrypt decrypt document.enc</pre>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    The CLI tool provides the same security but runs locally on your computer.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="https://github.com/yourusername/secure-encrypt" 
+                   class="btn btn-primary" target="_blank">
+                    <i class="bi bi-download"></i> Download CLI
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Generate error ID if not provided
+if (!document.querySelector('code').textContent.includes('UNKNOWN')) {
+    const errorId = 'ERR_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    document.querySelector('code').textContent = 'Error ID: ' + errorId;
+}
+
+// Log error details
+console.error('500 Error:', {
+    path: window.location.pathname,
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent
+});
+
+// Auto-refresh after 30 seconds
+setTimeout(() => {
+    const refreshBtn = document.querySelector('button[onclick="location.reload()"]');
+    if (refreshBtn) {
+        refreshBtn.click();
+    }
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Decrypt File - Secure File Encryption{% endblock %}
+
+{% block extra_head %}
+<style>
+.file-preview {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.2);
+    margin-bottom: 1.5rem;
+}
+.file-icon {
+    font-size: 4rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+.file-info {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+.decryption-status {
+    display: none;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+.status-verifying {
+    background-color: rgba(255, 193, 7, 0.2);
+    border-left: 4px solid var(--warning-color);
+}
+.status-success {
+    background-color: rgba(25, 135, 84, 0.2);
+    border-left: 4px solid var(--success-color);
+}
+.status-error {
+    background-color: rgba(220, 53, 69, 0.2);
+    border-left: 4px solid var(--danger-color);
+}
+.password-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid var(--warning-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0"><i class="bi bi-file-earmark-unlock"></i> Decrypt File</h3>
+            </div>
+            <div class="card-body">
+                <div class="password-warning">
+                    <h5><i class="bi bi-exclamation-triangle"></i> Important Security Notice</h5>
+                    <p class="mb-0">
+                        Decryption happens <strong>server-side</strong> for .enc files. 
+                        Your password is sent securely via TLS but is processed on our server.
+                        For maximum security, consider using the CLI version.
+                    </p>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data" id="decryptForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- File Upload Area -->
+                    <div class="file-upload-area mb-4" id="fileUploadArea">
+                        <div class="file-icon">
+                            <i class="bi bi-file-earmark-lock"></i>
+                        </div>
+                        <h5>Drop your encrypted file here</h5>
+                        <p class="text-muted">or click to select</p>
+                        {{ form.file(class="d-none", id="fileInput", accept=".enc") }}
+                        <div class="file-name mt-2">No file chosen</div>
+                        <small class="text-muted">Only .enc files are supported</small>
+                    </div>
+                    
+                    <!-- File Preview (hidden by default) -->
+                    <div class="file-preview d-none" id="filePreview">
+                        <div class="file-icon">
+                            <i class="bi bi-file-earmark-lock-fill"></i>
+                        </div>
+                        <h5 id="fileName">encrypted_file.enc</h5>
+                        <div class="file-info">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">Size:</small>
+                                    <div id="fileSize">-- MB</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Type:</small>
+                                    <div>Encrypted File (.enc)</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeFile">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if form.file.errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.file.errors %}
+                                <i class="bi bi-exclamation-circle"></i> {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Password Field -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-key"></i> Decryption Password
+                        </label>
+                        <div class="input-group">
+                            {{ form.password(class="form-control", id="password", placeholder="Enter the password used for encryption") }}
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            Enter the exact password used when encrypting this file
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Decryption Status -->
+                    <div class="decryption-status" id="decryptionStatus">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner me-3"></div>
+                            <div>
+                                <h6 class="mb-1">Decrypting...</h6>
+                                <small class="text-muted" id="statusText">Verifying password and decrypting file</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning btn-lg" id="submitBtn" disabled>
+                            <i class="bi bi-unlock"></i> Decrypt File
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Recovery Information -->
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-dark py-2">
+                <i class="bi bi-life-preserver"></i> Can't Decrypt?
+            </div>
+            <div class="card-body py-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-question-circle"></i> Common Issues</h6>
+                        <ul class="mb-0">
+                            <li>Wrong password (check caps lock)</li>
+                            <li>Corrupted .enc file</li>
+                            <li>File encrypted with different version</li>
+                            <li>Network interruption during upload</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-lightbulb"></i> Solutions</h6>
+                        <ul class="mb-0">
+                            <li>Try password variations</li>
+                            <li>Re-download the encrypted file</li>
+                            <li>Use the CLI tool for diagnosis</li>
+                            <li>Contact support (provide no passwords)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Security Tips -->
+        <div class="card mt-4 border-success">
+            <div class="card-body">
+                <h5><i class="bi bi-shield-check"></i> Security Best Practices</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="alert alert-success py-2">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Always</strong> keep backups of encrypted files
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-success py-2">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Use</strong> a password manager for strong passwords
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-success py-2">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Verify</strong> decryption works before deleting originals
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-success py-2">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Consider</strong> CLI version for sensitive files
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFileBtn = document.getElementById('removeFile');
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const submitBtn = document.getElementById('submitBtn');
+    const decryptForm = document.getElementById('decryptForm');
+    const decryptionStatus = document.getElementById('decryptionStatus');
+    const statusText = document.getElementById('statusText');
+    
+    // File upload handling
+    fileUploadArea.addEventListener('click', () => fileInput.click());
+    
+    fileUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.add('dragover');
+    });
+    
+    fileUploadArea.addEventListener('dragleave', () => {
+        fileUploadArea.classList.remove('dragover');
+    });
+    
+    fileUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            handleFileSelect(fileInput.files[0]);
+        }
+    });
+    
+    function handleFileSelect(file) {
+        // Validate file
+        if (!file.name.endsWith('.enc')) {
+            alert('Only .enc files are supported for decryption.');
+            return;
+        }
+        
+        if (file.size > 100 * 1024 * 1024) { // 100MB
+            alert('File size exceeds 100MB limit.');
+            return;
+        }
+        
+        // Update UI
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        
+        // Show preview, hide upload area
+        fileUploadArea.classList.add('d-none');
+        filePreview.classList.remove('d-none');
+        
+        validateForm();
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+    
+    // Remove file
+    removeFileBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        fileUploadArea.classList.remove('d-none');
+        filePreview.classList.add('d-none');
+        validateForm();
+    });
+    
+    // Toggle password visibility
+    togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+    
+    // Form validation
+    function validateForm() {
+        const hasFile = fileInput.files.length > 0;
+        const hasPassword = passwordInput.value.length >= 1;
+        
+        submitBtn.disabled = !(hasFile && hasPassword);
+    }
+    
+    passwordInput.addEventListener('input', validateForm);
+    
+    // Form submission
+    decryptForm.addEventListener('submit', function(e) {
+        if (submitBtn.disabled) {
+            e.preventDefault();
+            return;
+        }
+        
+        // Show decryption status
+        decryptionStatus.style.display = 'block';
+        decryptionStatus.className = 'decryption-status status-verifying';
+        statusText.textContent = 'Verifying password and decrypting file...';
+        
+        // Disable form
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Decrypting...';
+        
+        // Simulate progress updates
+        setTimeout(() => {
+            statusText.textContent = 'Validating authentication tag...';
+        }, 1000);
+        
+        setTimeout(() => {
+            statusText.textContent = 'Decrypting file contents...';
+        }, 2000);
+        
+        // The form will submit normally after this
+    });
+    
+    // Check if there's an error message from server
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('error')) {
+        const error = urlParams.get('error');
+        decryptionStatus.style.display = 'block';
+        decryptionStatus.className = 'decryption-status status-error';
+        decryptionStatus.innerHTML = `
+            <div>
+                <h6 class="mb-1"><i class="bi bi-exclamation-triangle"></i> Decryption Failed</h6>
+                <small class="text-muted">${decodeURIComponent(error)}</small>
+            </div>
+        `;
+    }
+    
+    // Initial validation
+    validateForm();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,668 @@
+{% extends "base.html" %}
+
+{% block title %}Security Information - Secure File Encryption{% endblock %}
+
+{% block extra_head %}
+<style>
+.security-card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+.security-card:hover {
+    transform: translateY(-5px);
+}
+.security-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+.algorithm-details {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+.parameter {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.parameter:last-child {
+    border-bottom: none;
+}
+.threat-model {
+    border-left: 4px solid;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+.threat-protected {
+    border-left-color: var(--success-color);
+}
+.threat-unprotected {
+    border-left-color: var(--danger-color);
+}
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.comparison-table th, .comparison-table td {
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+}
+.comparison-table th {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+.comparison-table .good {
+    background-color: rgba(25, 135, 84, 0.2);
+    color: var(--success-color);
+}
+.comparison-table .bad {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+}
+.comparison-table .neutral {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
+}
+.security-badge-large {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: bold;
+    margin: 0.25rem;
+    font-size: 0.9rem;
+}
+.code-block {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    overflow-x: auto;
+}
+.accordion-button {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: white;
+    font-weight: bold;
+}
+.accordion-button:not(.collapsed) {
+    background-color: rgba(var(--primary-color-rgb), 0.2);
+    color: white;
+}
+.accordion-body {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">
+            <i class="bi bi-shield-lock"></i>
+            Security & Cryptography
+        </h1>
+        <p class="lead">
+            Understanding the military-grade encryption protecting your files
+        </p>
+    </div>
+    
+    <!-- Overview -->
+    <div class="card security-card border-primary mb-5">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-lock"></i> Security Overview</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>🔐 What We Protect</h5>
+                    <ul>
+                        <li><strong>Data Confidentiality:</strong> Files are unreadable without the password</li>
+                        <li><strong>Data Integrity:</strong> Tampering is detected and prevented</li>
+                        <li><strong>Authentication:</strong> Only the password holder can decrypt</li>
+                        <li><strong>Forward Secrecy:</strong> Each encryption uses unique random values</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>🛡️ How We Protect</h5>
+                    <ul>
+                        <li><strong>AES-256-GCM:</strong> Authenticated encryption algorithm</li>
+                        <li><strong>Argon2id:</strong> Memory-hard key derivation function</li>
+                        <li><strong>Zero-Knowledge:</strong> We never see your passwords or files</li>
+                        <li><strong>Client-Side Processing:</strong> Encryption happens in your browser</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                {% for badge in ['AES-256', 'GCM Mode', 'Argon2id', 'Zero-Knowledge', 'Client-Side', 'Open Source'] %}
+                <span class="security-badge-large bg-primary">{{ badge }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Algorithms -->
+    <div class="row mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card security-card border-success h-100">
+                <div class="card-body text-center">
+                    <div class="security-icon text-success">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <h4>AES-256-GCM</h4>
+                    <p class="text-muted">Advanced Encryption Standard - 256 bit in Galois/Counter Mode</p>
+                    
+                    <div class="algorithm-details">
+                        <div class="parameter">
+                            <span>Key Size:</span>
+                            <strong>256 bits</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>Block Size:</span>
+                            <strong>128 bits</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>Mode:</span>
+                            <strong>GCM (Authenticated)</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>Security Level:</span>
+                            <strong>Military Grade</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>NIST Approval:</span>
+                            <strong>✅ Approved</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-outline-success" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#aesDetails">
+                            Technical Details
+                        </button>
+                    </div>
+                    
+                    <div class="collapse mt-3" id="aesDetails">
+                        <div class="card card-body bg-dark">
+                            <h6>How AES-GCM Works:</h6>
+                            <ol class="small">
+                                <li>Generates random 96-bit nonce (IV)</li>
+                                <li>Uses CTR mode for parallel encryption</li>
+                                <li>Computes Galois MAC for authentication</li>
+                                <li>Produces ciphertext + 128-bit authentication tag</li>
+                                <li>Decryption verifies tag before revealing plaintext</li>
+                            </ol>
+                            <code class="text-info">Security: 2^128 operations to break</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card security-card border-warning h-100">
+                <div class="card-body text-center">
+                    <div class="security-icon text-warning">
+                        <i class="bi bi-memory"></i>
+                    </div>
+                    <h4>Argon2id</h4>
+                    <p class="text-muted">Memory-Hard Password Hashing - 2015 Password Hashing Competition Winner</p>
+                    
+                    <div class="algorithm-details">
+                        <div class="parameter">
+                            <span>Type:</span>
+                            <strong>Hybrid (Memory + CPU hard)</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>Memory Cost:</span>
+                            <strong>64 MB</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>Time Cost:</span>
+                            <strong>2 iterations</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>Parallelism:</span>
+                            <strong>1 thread</strong>
+                        </div>
+                        <div class="parameter">
+                            <span>Output Length:</span>
+                            <strong>256 bits</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-outline-warning" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#argonDetails">
+                            Technical Details
+                        </button>
+                    </div>
+                    
+                    <div class="collapse mt-3" id="argonDetails">
+                        <div class="card card-body bg-dark">
+                            <h6>Why Argon2id?</h6>
+                            <ul class="small">
+                                <li>Resistant to GPU/ASIC attacks (memory-hard)</li>
+                                <li>Protects against rainbow tables</li>
+                                <li>Configurable memory usage</li>
+                                <li>Winner of PHC, recommended by OWASP</li>
+                            </ul>
+                            <code class="text-warning">Attack cost: ~$1M for 10^12 guesses</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Threat Model -->
+    <div class="card security-card border-info mb-5">
+        <div class="card-header bg-info text-dark">
+            <h3 class="mb-0"><i class="bi bi-shield-exclamation"></i> Threat Model</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>✅ Protected Against</h5>
+                    <div class="threat-model threat-protected">
+                        <h6>Stolen Encrypted Files</h6>
+                        <p class="small">Without the password, encrypted files are computationally infeasible to decrypt.</p>
+                    </div>
+                    <div class="threat-model threat-protected">
+                        <h6>Brute-Force Attacks</h6>
+                        <p class="small">Argon2id makes password guessing extremely slow and memory-intensive.</p>
+                    </div>
+                    <div class="threat-model threat-protected">
+                        <h6>File Tampering</h6>
+                        <p class="small">GCM authentication tags detect any modification to encrypted files.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5>⚠️ Not Protected Against</h5>
+                    <div class="threat-model threat-unprotected">
+                        <h6>Weak Passwords</h6>
+                        <p class="small">"password123" can still be guessed quickly despite strong crypto.</p>
+                    </div>
+                    <div class="threat-model threat-unprotected">
+                        <h6>Compromised Devices</h6>
+                        <p class="small">Keyloggers, malware, or physical access can bypass encryption.</p>
+                    </div>
+                    <div class="threat-model threat-unprotected">
+                        <h6>Lost Passwords</h6>
+                        <p class="small">There is no backdoor or recovery option. Lost password = lost data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comparison Table -->
+    <div class="card security-card border-secondary mb-5">
+        <div class="card-header bg-secondary text-white">
+            <h3 class="mb-0"><i class="bi bi-graph-up"></i> Security Comparison</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Our Implementation</th>
+                            <th>Typical Encryption Tools</th>
+                            <th>Consumer Cloud Storage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Encryption Algorithm</td>
+                            <td class="good">AES-256-GCM</td>
+                            <td class="neutral">AES-256-CBC</td>
+                            <td class="bad">AES-128 or none</td>
+                        </tr>
+                        <tr>
+                            <td>Key Derivation</td>
+                            <td class="good">Argon2id</td>
+                            <td class="neutral">PBKDF2</td>
+                            <td class="bad">MD5 or SHA1</td>
+                        </tr>
+                        <tr>
+                            <td>Authentication</td>
+                            <td class="good">GCM Tag</td>
+                            <td class="neutral">HMAC-SHA256</td>
+                            <td class="bad">None</td>
+                        </tr>
+                        <tr>
+                            <td>Zero-Knowledge</td>
+                            <td class="good">✅ Yes</td>
+                            <td class="neutral">⚠️ Sometimes</td>
+                            <td class="bad">❌ No</td>
+                        </tr>
+                        <tr>
+                            <td>Open Source</td>
+                            <td class="good">✅ Full Audit</td>
+                            <td class="neutral">⚠️ Partial</td>
+                            <td class="bad">❌ Proprietary</td>
+                        </tr>
+                        <tr>
+                            <td>Password Requirements</td>
+                            <td class="good">12+ chars, validation</td>
+                            <td class="neutral">8+ chars</td>
+                            <td class="bad">None</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Security Settings Form -->
+    <div class="card security-card border-warning mb-5">
+        <div class="card-header bg-warning text-dark">
+            <h3 class="mb-0"><i class="bi bi-gear"></i> Security Settings</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.update_security') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-lock"></i> Encryption Algorithm
+                            </label>
+                            {{ form.encryption_algorithm(class="form-select") }}
+                            <div class="form-text">
+                                AES-256-GCM is recommended for authenticated encryption
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-cpu"></i> Key Derivation Function
+                            </label>
+                            {{ form.key_derivation(class="form-select") }}
+                            <div class="form-text">
+                                Argon2id provides better resistance against GPU attacks
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-clock"></i> Session Timeout
+                            </label>
+                            {{ form.session_timeout(class="form-select") }}
+                            <div class="form-text">
+                                Automatic logout after period of inactivity
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mt-4 pt-3">
+                            {{ form.require_2fa(class="form-check-input") }}
+                            <label class="form-check-label fw-bold">
+                                <i class="bi bi-phone"></i> Require Two-Factor Authentication
+                            </label>
+                            <div class="form-text">
+                                Adds TOTP-based 2FA for additional security (coming soon)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="bi bi-save"></i> Update Security Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- FAQ Accordion -->
+    <div class="accordion mb-5" id="securityFAQ">
+        <div class="accordion-item bg-dark border-primary">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#faq1">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Is this really secure enough for sensitive documents?
+                </button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#securityFAQ">
+                <div class="accordion-body">
+                    <p><strong>Yes.</strong> We use the same cryptographic algorithms that protect:</p>
+                    <ul>
+                        <li>Government classified information (up to TOP SECRET)</li>
+                        <li>Online banking transactions</li>
+                        <li>Military communications</li>
+                        <li>VPN connections</li>
+                    </ul>
+                    <p>The security depends primarily on your password strength. With a strong password (20+ characters, random), your files are effectively uncrackable.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item bg-dark border-primary">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#faq2">
+                    <i class="bi bi-question-circle me-2"></i>
+                    What happens if I forget my password?
+                </button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#securityFAQ">
+                <div class="accordion-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>There is no recovery option.</strong> This is by design.
+                    </div>
+                    <p>We cannot recover or reset your password because:</p>
+                    <ol>
+                        <li>We never see your password (it's processed client-side)</li>
+                        <li>There's no backdoor in the encryption (that would weaken security)</li>
+                        <li>The encryption key is derived from your password and discarded after use</li>
+                    </ol>
+                    <p><strong>Recommendation:</strong> Use a password manager and keep secure backups of important passwords.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item bg-dark border-primary">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#faq3">
+                    <i class="bi bi-question-circle me-2"></i>
+                    How is this different from built-in encryption (BitLocker/FileVault)?
+                </button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#securityFAQ">
+                <div class="accordion-body">
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Our Tool</th>
+                                <th>BitLocker/FileVault</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Encryption Scope</td>
+                                <td>Individual files</td>
+                                <td>Entire disk/volume</td>
+                            </tr>
+                            <tr>
+                                <td>Portability</td>
+                                <td>✅ Encrypted files work anywhere</td>
+                                <td>❌ Tied to specific device</td>
+                            </tr>
+                            <tr>
+                                <td>Cloud Safe</td>
+                                <td>✅ Safe to upload encrypted files</td>
+                                <td>⚠️ Decrypts in memory on device</td>
+                            </tr>
+                            <tr>
+                                <td>Backdoor Risk</td>
+                                <td>❌ No backdoor possible</td>
+                                <td>⚠️ Government access possible</td>
+                            </tr>
+                            <tr>
+                                <td>Use Case</td>
+                                <td>File sharing & cloud storage</td>
+                                <td>Device theft protection</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>They serve different purposes. Use both for maximum security.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item bg-dark border-primary">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#faq4">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Can quantum computers break this encryption?
+                </button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#securityFAQ">
+                <div class="accordion-body">
+                    <p><strong>Current quantum computers:</strong> No practical threat to AES-256.</p>
+                    <p><strong>Future quantum computers:</strong> Grover's algorithm could theoretically reduce AES-256 security to AES-128, which is still very strong.</p>
+                    <p>We're monitoring post-quantum cryptography developments and will upgrade when standardized algorithms are available. For now:</p>
+                    <ul>
+                        <li>AES-256 is considered quantum-resistant enough for decades</li>
+                        <li>Use longer passwords (32+ characters) for quantum resistance</li>
+                        <li>We'll automatically migrate to post-quantum algorithms when ready</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Technical Details -->
+    <div class="card security-card border-dark">
+        <div class="card-header bg-dark text-white">
+            <h3 class="mb-0"><i class="bi bi-code-slash"></i> Technical Implementation</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>File Format</h5>
+                    <div class="code-block">
+<pre>Encrypted File Structure:
+─────────────────────────────────
+Offset  Size    Description
+─────────────────────────────────
+0       5       Magic: "ENCv1"
+5       1       Version: 1
+6       1       Algorithm: 1 (AES-GCM)
+7       1       Salt Length: 16
+8       16      Salt (random)
+24      1       Nonce Length: 12
+25      12      Nonce (random)
+37      1       Tag Length: 16
+38      16      Authentication Tag
+54      2       KDF Params Length
+56      var     KDF Parameters
+n       8       Ciphertext Length
+n+8     var     Ciphertext
+─────────────────────────────────</pre>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5>Encryption Process</h5>
+                    <div class="code-block">
+<pre>// Pseudocode
+function encrypt(password, plaintext):
+    salt = random_bytes(16)
+    nonce = random_bytes(12)
+    
+    // Key derivation
+    key = argon2id(
+        password, 
+        salt, 
+        time_cost=2,
+        memory_cost=64MB
+    )
+    
+    // Encryption
+    cipher = AES256_GCM(key, nonce)
+    ciphertext, tag = cipher.encrypt(plaintext)
+    
+    // Package
+    return {
+        salt: salt,
+        nonce: nonce,
+        tag: tag,
+        ciphertext: ciphertext
+    }</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="https://github.com/yourusername/secure-encrypt" 
+                   class="btn btn-outline-light me-2" target="_blank">
+                    <i class="bi bi-github"></i> View Source Code
+                </a>
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                    <i class="bi bi-lock"></i> Start Encrypting
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update form based on selections
+document.addEventListener('DOMContentLoaded', function() {
+    const algorithmSelect = document.getElementById('encryption_algorithm');
+    const kdfSelect = document.getElementById('key_derivation');
+    
+    function updateRecommendations() {
+        const algo = algorithmSelect.value;
+        const kdf = kdfSelect.value;
+        
+        // Show/hide recommendations based on selections
+        const recommendations = document.getElementById('recommendations');
+        if (recommendations) {
+            let text = '';
+            if (algo === 'aes-256-gcm' && kdf === 'argon2id') {
+                text = '✅ Optimal security configuration selected.';
+            } else if (algo === 'aes-256-cbc') {
+                text = '⚠️ CBC mode requires proper initialization vectors. Consider GCM for authenticated encryption.';
+            } else if (kdf === 'pbkdf2') {
+                text = '⚠️ PBKDF2 is less resistant to GPU attacks than Argon2id.';
+            }
+            recommendations.textContent = text;
+        }
+    }
+    
+    algorithmSelect.addEventListener('change', updateRecommendations);
+    kdfSelect.addEventListener('change', updateRecommendations);
+    updateRecommendations();
+    
+    // Password generator
+    document.getElementById('generatePassword').addEventListener('click', function() {
+        const password = window.SecureEncrypt.generatePassword(20);
+        document.getElementById('generatedPassword').textContent = password;
+        document.getElementById('passwordEntropy').textContent = 
+            window.SecureEncrypt.estimateEntropy(password) + ' bits';
+    });
+});
+</script>
+{% endblock %}

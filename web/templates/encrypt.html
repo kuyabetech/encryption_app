@@ -1,0 +1,969 @@
+{% extends "base.html" %}
+
+{% block title %}Encrypt File - Secure File Encryption{% endblock %}
+
+{% block extra_head %}
+<style>
+.file-upload-area {
+    border: 3px dashed rgba(13, 110, 253, 0.3);
+    border-radius: 15px;
+    padding: 3rem;
+    text-align: center;
+    background: rgba(13, 110, 253, 0.05);
+    cursor: pointer;
+    transition: all 0.3s;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.file-upload-area:hover {
+    border-color: var(--primary-color);
+    background: rgba(13, 110, 253, 0.1);
+}
+.file-upload-area.dragover {
+    border-color: var(--success-color);
+    background: rgba(25, 135, 84, 0.1);
+}
+.upload-icon {
+    font-size: 4rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+.file-name {
+    font-weight: 600;
+    margin-top: 1rem;
+    word-break: break-all;
+}
+.password-strength-meter {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+.strength-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.3s, background 0.3s;
+}
+.requirement-list {
+    list-style: none;
+    padding-left: 0;
+}
+.requirement-item {
+    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+}
+.requirement-icon {
+    width: 20px;
+    margin-right: 0.5rem;
+    text-align: center;
+}
+.requirement-met {
+    color: var(--success-color);
+}
+.requirement-unmet {
+    color: var(--secondary-color);
+}
+.encryption-progress {
+    display: none;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+.progress-steps {
+    counter-reset: step;
+}
+.progress-step {
+    position: relative;
+    padding-left: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+.progress-step.active {
+    opacity: 1;
+}
+.progress-step.completed {
+    opacity: 1;
+    color: var(--success-color);
+}
+.progress-step:before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2rem;
+    height: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.progress-step.active:before {
+    background: var(--primary-color);
+    color: white;
+}
+.progress-step.completed:before {
+    background: var(--success-color);
+    color: white;
+    content: '✓';
+}
+.file-preview {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+}
+.preview-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+.security-options {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+.option-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.option-toggle:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">
+            <i class="bi bi-file-earmark-lock text-primary me-2"></i>
+            Encrypt File
+        </h1>
+        <p class="lead text-muted">
+            Secure any file with AES-256-GCM encryption. Your data never leaves your browser unencrypted.
+        </p>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Encryption Form -->
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white py-3">
+                    <h3 class="mb-0">
+                        <i class="bi bi-lock me-2"></i>
+                        Encryption Settings
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="encryptForm" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Step 1: File Selection -->
+                        <div class="mb-5">
+                            <h4 class="mb-4">
+                                <span class="badge bg-primary me-2">1</span>
+                                Select File to Encrypt
+                            </h4>
+                            
+                            <!-- File Upload Area -->
+                            <div class="file-upload-area mb-3" id="fileUploadArea">
+                                <div class="upload-icon">
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                </div>
+                                <h5>Drag & drop your file here</h5>
+                                <p class="text-muted mb-3">or click to browse</p>
+                                {{ form.file(class="d-none", id="fileInput", accept=".txt,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip,.rar") }}
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                                    <i class="bi bi-folder2-open me-2"></i>Browse Files
+                                </button>
+                                <div class="file-name text-primary mt-3" id="fileName">
+                                    No file selected
+                                </div>
+                                <small class="text-muted mt-2">
+                                    Max file size: 100MB • Supported: Documents, Images, Archives
+                                </small>
+                            </div>
+                            
+                            <!-- File Preview -->
+                            <div class="file-preview d-none" id="filePreview">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="preview-icon">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <h6 id="previewName">filename.ext</h6>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Size:</small>
+                                                <div id="previewSize">-- MB</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Type:</small>
+                                                <div id="previewType">Unknown</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Modified:</small>
+                                                <div id="previewModified">--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeFile">
+                                            <i class="bi bi-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if form.file.errors %}
+                            <div class="alert alert-danger mt-3">
+                                {% for error in form.file.errors %}
+                                <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Step 2: Password Settings -->
+                        <div class="mb-5">
+                            <h4 class="mb-4">
+                                <span class="badge bg-primary me-2">2</span>
+                                Set Encryption Password
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-key me-2"></i>
+                                        Password
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.password(class="form-control", id="password", 
+                                           placeholder="Enter strong password", minlength="12") }}
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info" type="button" id="generatePassword">
+                                            <i class="bi bi-shuffle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength-meter mt-2">
+                                        <div class="strength-bar" id="strengthBar"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <small id="strengthText" class="text-muted">Strength: Very Weak</small>
+                                        <small id="entropyText" class="text-muted">Entropy: 0 bits</small>
+                                    </div>
+                                    {% if form.password.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.password.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-key-fill me-2"></i>
+                                        Confirm Password
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.confirm_password(class="form-control", id="confirmPassword", 
+                                           placeholder="Re-enter password") }}
+                                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-2" id="passwordMatch">
+                                        <small class="text-muted">Passwords must match</small>
+                                    </div>
+                                    {% if form.confirm_password.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.confirm_password.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Password Requirements -->
+                            <div class="card border-info mb-4">
+                                <div class="card-header bg-info text-dark py-2">
+                                    <i class="bi bi-list-check me-2"></i>
+                                    Password Requirements
+                                </div>
+                                <div class="card-body py-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul class="requirement-list">
+                                                <li class="requirement-item">
+                                                    <span class="requirement-icon" id="reqLengthIcon">
+                                                        <i class="bi bi-x-circle text-danger"></i>
+                                                    </span>
+                                                    <span id="reqLengthText">At least 12 characters</span>
+                                                </li>
+                                                <li class="requirement-item">
+                                                    <span class="requirement-icon" id="reqUpperIcon">
+                                                        <i class="bi bi-x-circle text-danger"></i>
+                                                    </span>
+                                                    <span id="reqUpperText">One uppercase letter</span>
+                                                </li>
+                                                <li class="requirement-item">
+                                                    <span class="requirement-icon" id="reqLowerIcon">
+                                                        <i class="bi bi-x-circle text-danger"></i>
+                                                    </span>
+                                                    <span id="reqLowerText">One lowercase letter</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul class="requirement-list">
+                                                <li class="requirement-item">
+                                                    <span class="requirement-icon" id="reqNumberIcon">
+                                                        <i class="bi bi-x-circle text-danger"></i>
+                                                    </span>
+                                                    <span id="reqNumberText">One number</span>
+                                                </li>
+                                                <li class="requirement-item">
+                                                    <span class="requirement-icon" id="reqSpecialIcon">
+                                                        <i class="bi bi-x-circle text-danger"></i>
+                                                    </span>
+                                                    <span id="reqSpecialText">One special character</span>
+                                                </li>
+                                                <li class="requirement-item">
+                                                    <span class="requirement-icon" id="reqCommonIcon">
+                                                        <i class="bi bi-check-circle text-success"></i>
+                                                    </span>
+                                                    <span id="reqCommonText">Not a common password</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Password Generator -->
+                            <div class="alert alert-warning">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-lightbulb me-2"></i>
+                                        <strong>Need a strong password?</strong> 
+                                        <span id="generatedPassword" class="text-monospace">Click generate</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-warning" id="useGeneratedPassword">
+                                        <i class="bi bi-check-circle me-1"></i> Use This
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3: Security Options -->
+                        <div class="mb-5">
+                            <h4 class="mb-4">
+                                <span class="badge bg-primary me-2">3</span>
+                                Security Options
+                            </h4>
+                            
+                            <div class="security-options">
+                                <div class="option-toggle">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-trash text-danger me-2"></i>
+                                            Securely Delete Original
+                                        </h6>
+                                        <p class="mb-0 small text-muted">
+                                            Overwrite original file with random data before deletion
+                                        </p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        {{ form.delete_original(class="form-check-input", id="deleteOriginal") }}
+                                        <label class="form-check-label" for="deleteOriginal"></label>
+                                    </div>
+                                </div>
+                                
+                                <div class="option-toggle">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-shield-check text-success me-2"></i>
+                                            Generate Backup Copy
+                                        </h6>
+                                        <p class="mb-0 small text-muted">
+                                            Create unencrypted backup before encryption (recommended)
+                                        </p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="createBackup" checked>
+                                        <label class="form-check-label" for="createBackup"></label>
+                                    </div>
+                                </div>
+                                
+                                <div class="option-toggle">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-file-earmark-text text-info me-2"></i>
+                                            Add Encryption Notes
+                                        </h6>
+                                        <p class="mb-0 small text-muted">
+                                            Include metadata about encryption date and purpose
+                                        </p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="addMetadata">
+                                        <label class="form-check-label" for="addMetadata"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Warning for secure delete -->
+                            <div class="alert alert-danger mt-3" id="deleteWarning" style="display: none;">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Warning:</strong> Secure deletion is permanent and irreversible. 
+                                Make sure you have backed up your file elsewhere before enabling this option.
+                            </div>
+                        </div>
+                        
+                        <!-- Encryption Progress -->
+                        <div class="encryption-progress" id="encryptionProgress">
+                            <h5 class="mb-3">
+                                <i class="bi bi-hourglass-split text-primary me-2"></i>
+                                Encrypting Your File
+                            </h5>
+                            <div class="progress-steps">
+                                <div class="progress-step" id="step1">
+                                    Reading file and preparing encryption
+                                </div>
+                                <div class="progress-step" id="step2">
+                                    Generating encryption key with Argon2id
+                                </div>
+                                <div class="progress-step" id="step3">
+                                    Encrypting with AES-256-GCM
+                                </div>
+                                <div class="progress-step" id="step4">
+                                    Creating authentication tag
+                                </div>
+                                <div class="progress-step" id="step5">
+                                    Packaging encrypted file
+                                </div>
+                            </div>
+                            <div class="progress mt-3">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     id="progressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg py-3" id="submitBtn" disabled>
+                                <i class="bi bi-lock me-2"></i>
+                                Encrypt File
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Security Information -->
+            <div class="card mt-4 border-info">
+                <div class="card-header bg-info text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-check me-2"></i>
+                        What Happens During Encryption
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-cpu text-primary me-2"></i>Technical Process</h6>
+                            <ol class="small">
+                                <li><strong>Key Generation:</strong> Your password is converted to a 256-bit key using Argon2id</li>
+                                <li><strong>Encryption:</strong> File is encrypted with AES-256-GCM using a unique random nonce</li>
+                                <li><strong>Authentication:</strong> GCM tag is created to detect tampering</li>
+                                <li><strong>Packaging:</strong> Salt, nonce, tag, and ciphertext are combined</li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-safe text-success me-2"></i>Security Guarantees</h6>
+                            <ul class="small">
+                                <li><strong>Confidentiality:</strong> Without password, file is unreadable</li>
+                                <li><strong>Integrity:</strong> Any tampering is detected</li>
+                                <li><strong>Authentication:</strong> Only password holder can decrypt</li>
+                                <li><strong>Forward Secrecy:</strong> Each encryption uses unique values</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> There is no password recovery. Lose the password = lose the file forever.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FAQ -->
+            <div class="card mt-4 border-secondary">
+                <div class="card-body">
+                    <h5 class="mb-3">
+                        <i class="bi bi-question-circle me-2"></i>
+                        Frequently Asked Questions
+                    </h5>
+                    <div class="accordion accordion-flush" id="encryptFAQ">
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#faq1">
+                                    How long does encryption take?
+                                </button>
+                            </h6>
+                            <div id="faq1" class="accordion-collapse collapse">
+                                <div class="accordion-body small">
+                                    <p>Encryption speed depends on:</p>
+                                    <ul>
+                                        <li><strong>File size:</strong> ~100 MB/sec on modern computers</li>
+                                        <li><strong>Password strength:</strong> Argon2id takes 0.5-2 seconds</li>
+                                        <li><strong>Computer speed:</strong> Faster CPU = faster encryption</li>
+                                    </ul>
+                                    <p class="mb-0">A 1GB file typically takes 10-20 seconds to encrypt.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#faq2">
+                                    Is my file safe during upload?
+                                </button>
+                            </h6>
+                            <div id="faq2" class="accordion-collapse collapse">
+                                <div class="accordion-body small">
+                                    <p><strong>Yes.</strong> The encryption happens <em>before</em> upload:</p>
+                                    <ol>
+                                        <li>File is encrypted in your browser</li>
+                                        <li>Only encrypted data is uploaded</li>
+                                        <li>We never see the original file</li>
+                                        <li>TLS encryption protects during transit</li>
+                                    </ol>
+                                    <p class="mb-0">This is called "client-side encryption" or "zero-knowledge architecture".</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#faq3">
+                                    Can I encrypt multiple files at once?
+                                </button>
+                            </h6>
+                            <div id="faq3" class="accordion-collapse collapse">
+                                <div class="accordion-body small">
+                                    <p>Currently, you can encrypt one file at a time. For multiple files:</p>
+                                    <ul>
+                                        <li><strong>Option 1:</strong> Create a ZIP archive and encrypt that</li>
+                                        <li><strong>Option 2:</strong> Use our CLI tool for batch processing</li>
+                                        <li><strong>Option 3:</strong> Encrypt files individually</li>
+                                    </ul>
+                                    <p class="mb-0">Batch encryption is planned for a future release.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const fileInput = document.getElementById('fileInput');
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileName = document.getElementById('fileName');
+    const filePreview = document.getElementById('filePreview');
+    const previewName = document.getElementById('previewName');
+    const previewSize = document.getElementById('previewSize');
+    const previewType = document.getElementById('previewType');
+    const previewModified = document.getElementById('previewModified');
+    const removeFileBtn = document.getElementById('removeFile');
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirmPassword');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const toggleConfirmBtn = document.getElementById('toggleConfirmPassword');
+    const generatePasswordBtn = document.getElementById('generatePassword');
+    const useGeneratedBtn = document.getElementById('useGeneratedPassword');
+    const generatedPasswordSpan = document.getElementById('generatedPassword');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    const entropyText = document.getElementById('entropyText');
+    const passwordMatch = document.getElementById('passwordMatch');
+    const deleteOriginal = document.getElementById('deleteOriginal');
+    const deleteWarning = document.getElementById('deleteWarning');
+    const submitBtn = document.getElementById('submitBtn');
+    const encryptForm = document.getElementById('encryptForm');
+    const encryptionProgress = document.getElementById('encryptionProgress');
+    const progressBar = document.getElementById('progressBar');
+    
+    // Password requirements elements
+    const reqIcons = {
+        length: document.getElementById('reqLengthIcon'),
+        upper: document.getElementById('reqUpperIcon'),
+        lower: document.getElementById('reqLowerIcon'),
+        number: document.getElementById('reqNumberIcon'),
+        special: document.getElementById('reqSpecialIcon'),
+        common: document.getElementById('reqCommonIcon')
+    };
+    
+    const reqTexts = {
+        length: document.getElementById('reqLengthText'),
+        upper: document.getElementById('reqUpperText'),
+        lower: document.getElementById('reqLowerText'),
+        number: document.getElementById('reqNumberText'),
+        special: document.getElementById('reqSpecialText'),
+        common: document.getElementById('reqCommonText')
+    };
+    
+    // File upload handling
+    fileUploadArea.addEventListener('click', () => fileInput.click());
+    
+    fileUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.add('dragover');
+    });
+    
+    fileUploadArea.addEventListener('dragleave', () => {
+        fileUploadArea.classList.remove('dragover');
+    });
+    
+    fileUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            handleFileSelect(fileInput.files[0]);
+        }
+    });
+    
+    function handleFileSelect(file) {
+        // Validate file
+        if (file.size > 100 * 1024 * 1024) { // 100MB
+            alert('File size exceeds 100MB limit. Please choose a smaller file.');
+            return;
+        }
+        
+        // Update UI
+        fileName.textContent = file.name;
+        previewName.textContent = file.name;
+        previewSize.textContent = formatFileSize(file.size);
+        previewType.textContent = getFileType(file.name);
+        previewModified.textContent = new Date(file.lastModified).toLocaleDateString();
+        
+        // Show preview, hide upload area
+        fileUploadArea.style.display = 'none';
+        filePreview.classList.remove('d-none');
+        
+        validateForm();
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+    
+    function getFileType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const types = {
+            'txt': 'Text Document',
+            'pdf': 'PDF Document',
+            'doc': 'Word Document',
+            'docx': 'Word Document',
+            'xls': 'Excel Spreadsheet',
+            'xlsx': 'Excel Spreadsheet',
+            'jpg': 'JPEG Image',
+            'jpeg': 'JPEG Image',
+            'png': 'PNG Image',
+            'zip': 'ZIP Archive',
+            'rar': 'RAR Archive'
+        };
+        return types[ext] || 'Unknown File Type';
+    }
+    
+    // Remove file
+    removeFileBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        fileUploadArea.style.display = 'flex';
+        filePreview.classList.add('d-none');
+        validateForm();
+    });
+    
+    // Password visibility toggles
+    togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+    
+    toggleConfirmBtn.addEventListener('click', function() {
+        const type = confirmInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        confirmInput.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+    
+    // Generate password
+    generatePasswordBtn.addEventListener('click', function() {
+        const password = generateStrongPassword(16);
+        generatedPasswordSpan.textContent = password;
+        generatedPasswordSpan.className = 'text-monospace text-success fw-bold';
+    });
+    
+    useGeneratedBtn.addEventListener('click', function() {
+        const password = generatedPasswordSpan.textContent;
+        if (password !== 'Click generate') {
+            passwordInput.value = password;
+            confirmInput.value = password;
+            updatePasswordStrength(password);
+            checkPasswordMatch();
+            validateForm();
+        }
+    });
+    
+    function generateStrongPassword(length) {
+        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+        let password = '';
+        
+        // Ensure at least one of each type
+        password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+        password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+        password += '0123456789'[Math.floor(Math.random() * 10)];
+        password += '!@#$%^&*()_+-=[]{}|;:,.<>?'[Math.floor(Math.random() * 30)];
+        
+        // Fill rest randomly
+        for (let i = 4; i < length; i++) {
+            password += charset[Math.floor(Math.random() * charset.length)];
+        }
+        
+        // Shuffle
+        return password.split('').sort(() => Math.random() - 0.5).join('');
+    }
+    
+    // Password strength calculation
+    function updatePasswordStrength(password) {
+        let score = 0;
+        const requirements = {
+            length: password.length >= 12,
+            upper: /[A-Z]/.test(password),
+            lower: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password),
+            common: !isCommonPassword(password)
+        };
+        
+        // Update requirement icons
+        Object.keys(requirements).forEach(key => {
+            const icon = reqIcons[key].querySelector('i');
+            const text = reqTexts[key];
+            
+            if (requirements[key]) {
+                icon.className = 'bi bi-check-circle text-success';
+                if (key !== 'common') {
+                    text.className = 'text-success';
+                }
+            } else {
+                icon.className = 'bi bi-x-circle text-danger';
+                if (key !== 'common') {
+                    text.className = 'text-danger';
+                }
+            }
+        });
+        
+        // Calculate score (0-100)
+        Object.values(requirements).forEach(met => {
+            if (met) score += 16.67; // 100 / 6 requirements
+        });
+        
+        // Update strength bar
+        strengthBar.style.width = score + '%';
+        
+        // Set color and text
+        let color, text;
+        if (score < 30) {
+            color = '#dc3545'; // Red
+            text = 'Very Weak';
+        } else if (score < 50) {
+            color = '#fd7e14'; // Orange
+            text = 'Weak';
+        } else if (score < 70) {
+            color = '#ffc107'; // Yellow
+            text = 'Fair';
+        } else if (score < 90) {
+            color = '#198754'; // Green
+            text = 'Strong';
+        } else {
+            color = '#0d6efd'; // Blue
+            text = 'Very Strong';
+        }
+        
+        strengthBar.style.backgroundColor = color;
+        strengthText.textContent = `Strength: ${text}`;
+        strengthText.className = score < 50 ? 'text-danger' : score < 70 ? 'text-warning' : 'text-success';
+        
+        // Calculate entropy
+        const entropy = calculateEntropy(password);
+        entropyText.textContent = `Entropy: ${entropy} bits`;
+        entropyText.className = entropy < 60 ? 'text-danger' : entropy < 80 ? 'text-warning' : 'text-success';
+        
+        return score;
+    }
+    
+    function isCommonPassword(password) {
+        const common = [
+            'password', '123456', 'qwerty', 'letmein', 'welcome',
+            'admin', 'password123', '123456789', '12345678', '12345'
+        ];
+        return common.includes(password.toLowerCase());
+    }
+    
+    function calculateEntropy(password) {
+        let charsetSize = 0;
+        if (/[a-z]/.test(password)) charsetSize += 26;
+        if (/[A-Z]/.test(password)) charsetSize += 26;
+        if (/[0-9]/.test(password)) charsetSize += 10;
+        if (/[^a-zA-Z0-9]/.test(password)) charsetSize += 32;
+        
+        if (charsetSize === 0) return 0;
+        return Math.round(password.length * Math.log2(charsetSize));
+    }
+    
+    // Password match check
+    function checkPasswordMatch() {
+        if (passwordInput.value && confirmInput.value) {
+            if (passwordInput.value === confirmInput.value) {
+                passwordMatch.innerHTML = '<small class="text-success"><i class="bi bi-check-circle me-1"></i>Passwords match</small>';
+                return true;
+            } else {
+                passwordMatch.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle me-1"></i>Passwords do not match</small>';
+                return false;
+            }
+        }
+        passwordMatch.innerHTML = '<small class="text-muted">Passwords must match</small>';
+        return false;
+    }
+    
+    // Secure delete warning
+    deleteOriginal.addEventListener('change', function() {
+        if (this.checked) {
+            deleteWarning.style.display = 'block';
+            if (!confirm('⚠️ WARNING: This will PERMANENTLY delete your original file after encryption.\n\nMake sure you have backed up your file elsewhere.\n\nContinue?')) {
+                this.checked = false;
+                deleteWarning.style.display = 'none';
+            }
+        } else {
+            deleteWarning.style.display = 'none';
+        }
+    });
+    
+    // Form validation
+    function validateForm() {
+        const hasFile = fileInput.files.length > 0;
+        const hasPassword = passwordInput.value.length >= 12;
+        const passwordStrength = updatePasswordStrength(passwordInput.value);
+        const passwordsMatch = checkPasswordMatch();
+        
+        // Enable/disable submit button
+        submitBtn.disabled = !(hasFile && hasPassword && passwordsMatch && passwordStrength >= 50);
+        
+        // Update button text
+        if (submitBtn.disabled) {
+            submitBtn.innerHTML = '<i class="bi bi-lock me-2"></i>Complete all fields above';
+        } else {
+            submitBtn.innerHTML = '<i class="bi bi-lock me-2"></i>Encrypt File';
+        }
+    }
+    
+    // Event listeners for validation
+    passwordInput.addEventListener('input', () => {
+        updatePasswordStrength(passwordInput.value);
+        checkPasswordMatch();
+        validateForm();
+    });
+    
+    confirmInput.addEventListener('input', () => {
+        checkPasswordMatch();
+        validateForm();
+    });
+    
+    // Form submission
+    encryptForm.addEventListener('submit', function(e) {
+        if (submitBtn.disabled) {
+            e.preventDefault();
+            return;
+        }
+        
+        // Show encryption progress
+        encryptionProgress.style.display = 'block';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Encrypting...';
+        
+        // Simulate encryption steps
+        const steps = document.querySelectorAll('.progress-step');
+        steps.forEach(step => step.classList.remove('active', 'completed'));
+        
+        let currentStep = 0;
+        const stepInterval = setInterval(() => {
+            if (currentStep > 0) {
+                steps[currentStep - 1].classList.remove('active');
+                steps[currentStep - 1].classList.add('completed');
+            }
+            
+            if (currentStep < steps.length) {
+                steps[currentStep].classList.add('active');
+                progressBar.style.width = ((currentStep + 1) / steps.length * 100) + '%';
+                currentStep++;
+            } else {
+                clearInterval(stepInterval);
+                // Form will submit normally after animation
+            }
+        }, 800);
+    });
+    
+    // Initial validation
+    validateForm();
+    
+    // Generate initial password
+    generatePasswordBtn.click();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,3 @@
+
+argon2-cffi>=23.1.0
+click>=8.1.0  # For clean CLI later

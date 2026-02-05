@@ -1,0 +1,30 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - FLASK_ENV=production
+      - UPLOAD_FOLDER=/app/web/uploads
+      - MAX_CONTENT_LENGTH=104857600
+    volumes:
+      - ./web/uploads:/app/web/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - encrypt_net
+
+  # Optional: Add Redis for session storage and rate limiting
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - encrypt_net
+
+networks:
+  encrypt_net:
+    driver: bridge
